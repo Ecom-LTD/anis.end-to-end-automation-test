@@ -1,30 +1,26 @@
-# FazzaAutomation — إطار اختبارات E2E (.NET 8 / xUnit)
+# FazzaAutomation — E2E Test Framework (.NET 8 / xUnit)
 
-حلٌّ كامل قابل للتشغيل يطبّق الخطة التحسينية: بنية لكل Microservice، حاوية DI، كاش جلسات،
-مجموعات مستخدمين معزولة، إعادة محاولة مركزية عند 401، وسيناريوهات متعدّدة الخدمات — مع
-**طبقة API وهمية داخل الذاكرة** بحيث يعمل `dotnet test` أخضرَ فورًا دون أي خادم حقيقي.
+A complete, runnable solution that implements the improvement plan: per-microservice architecture, DI container, session caching, isolated user pools, centralized retry on 401, and multi-service scenarios — with an **in-memory fake API layer** so that `dotnet test` runs green immediately without any real server.
 
-> تم بناء الإطار وتشغيله فعليًا: عيّنة التشغيل (`Automation.Smoke`) تعطي **١١/١١ نجاح**،
-> وكل ملفات الاختبار تُترجَم بنجاح. (لم تُشغَّل حزم xUnit في بيئة الإعداد بسبب غياب الإنترنت،
-> لكنها تُسترجَع تلقائيًا عند أول `dotnet build` على جهازك.)
+> The framework has been built and actually run: the sample runner (`Automation.Smoke`) gives **11/11 passed**, and all test files compile successfully. (xUnit packages weren't restored in the build environment due to lack of internet, but they'll be automatically retrieved on your first `dotnet build`.)
 
 ---
 
-## المتطلبات
+## Requirements
 
-- **.NET 8 SDK** (مثبّت ضمن Visual Studio 2026، أو VS 2022 ‎17.10+‎، أو مستقلًّا من dotnet.microsoft.com).
-- اتصال بالإنترنت لأول استرجاع لحزم NuGet (xUnit) فقط.
+- **.NET 8 SDK** (installed in Visual Studio 2026, or VS 2022 17.10+, or standalone from dotnet.microsoft.com).
+- Internet connection only for the initial NuGet package restore (xUnit).
 
-يعمل على: **Visual Studio 2026** (إصدار يونيو 2026)، أو VS 2022 ‎17.10+‎، أو `dotnet` CLI من الطرفية.
+Works on: **Visual Studio 2026** (June 2026 release), VS 2022 17.10+, or `dotnet` CLI from the terminal.
 
 ---
 
-## بنية الحل
+## Solution Structure
 
 ```
 FazzaAutomation.sln
-├── nuget.config                         مصدر NuGet (nuget.org)
-├── src/Automation.Framework/            مكتبة الإطار
+├── nuget.config                         NuGet source (nuget.org)
+├── src/Automation.Framework/            Framework library
 │   ├── Core/
 │   │   ├── Http/        ApiClient, ApiResponse, ApiException
 │   │   ├── Configuration/ Settings, ConfigurationManager, UserHelper
@@ -34,15 +30,15 @@ FazzaAutomation.sln
 │   │   ├── Session/     TestSession, SessionOptions, SessionBuilder,
 │   │   │                SessionCache, ResilientSession
 │   │   └── UserPool/    UserLease, UserPoolManager, UserPoolRegistry
-│   ├── Services/                        خدمة لكل Microservice
+│   ├── Services/                        Service per Microservice
 │   │   ├── Identity/    Endpoints · Models · Client · Flows
 │   │   ├── Account/     Endpoints · Models · Client · Flows
 │   │   ├── Wallet/      Endpoints · Models · Client · Flows
 │   │   └── Transfer/    Endpoints · Models · Client · Flows
-│   ├── Composition/     FrameworkRegistration  (جذر الـ DI)
-│   ├── Testing/         FakeBackendHandler     (الـ API الوهمي)
+│   ├── Composition/     FrameworkRegistration  (DI root)
+│   ├── Testing/         FakeBackendHandler     (Fake API)
 │   └── Configuration/   appsettings.json
-├── tests/Automation.Test/               مشروع xUnit
+├── tests/Automation.Test/               xUnit test project
 │   ├── Infrastructure/  TestHost, BaseFixture, AssemblyInfo
 │   ├── Sessions/        SulfaSessions
 │   ├── Fixtures/        SulfaFixture
@@ -51,104 +47,93 @@ FazzaAutomation.sln
 │   ├── Tests/Sulfa/     BaseSulfaTest, WalletTests
 │   ├── Tests/CrossService/ TransferConsistencyScenario, PooledUserTests
 │   └── xunit.runner.json
-└── tools/Automation.Smoke/              عيّنة تشغيل سريعة (Console)
+└── tools/Automation.Smoke/              Quick sample runner (Console)
     └── Program.cs
 ```
 
 ---
 
-## الحزم (NuGet)
+## Packages (NuGet)
 
-**Automation.Test** فقط يحتاج حزمًا (تُسترجَع تلقائيًا):
+**Automation.Test** only requires packages (restored automatically):
 - `Microsoft.NET.Test.Sdk` 17.12.0
 - `xunit` 2.9.2
 - `xunit.runner.visualstudio` 2.8.2
 - `coverlet.collector` 6.0.2
 
-**Automation.Framework** و **Automation.Smoke**: لا حزم خارجية — يستخدمان الـ Shared Framework
-لـ ASP.NET Core (‏`<FrameworkReference Include="Microsoft.AspNetCore.App" />`‎) للحصول على
-حقن التبعيات والإعدادات و System.Text.Json.
+**Automation.Framework** and **Automation.Smoke**: No external packages — they use the ASP.NET Core Shared Framework (`<FrameworkReference Include="Microsoft.AspNetCore.App" />`) for dependency injection, configuration, and System.Text.Json.
 
-> لاستخدام Newtonsoft.Json كما في كودك القديم: أضِف `Newtonsoft.Json` إلى مشروع الإطار
-> واستبدل استدعاءات `System.Text.Json` في `ApiClient`.
+> To use Newtonsoft.Json as in your legacy code: add `Newtonsoft.Json` to the framework project and replace `System.Text.Json` calls in `ApiClient`.
 
 ---
 
-## كيف تشغّله
+## How to Run
 
-### الطريقة الأولى: Visual Studio 2026
-1. افتح `FazzaAutomation.sln`.
-2. انتظر استرجاع الحزم (NuGet Restore تلقائي).
-3. **Build → Build Solution** (‏Ctrl+Shift+B‏).
-4. **Test → Run All Tests** (‏Test Explorer‏) — يجب أن تكون كل الاختبارات خضراء.
+### Option 1: Visual Studio 2026
+1. Open `FazzaAutomation.sln`.
+2. Wait for package restore (automatic NuGet Restore).
+3. **Build → Build Solution** (Ctrl+Shift+B).
+4. **Test → Run All Tests** (Test Explorer) — all tests should be green.
 
-### الطريقة الثانية: الطرفية (dotnet CLI)
+### Option 2: Terminal (dotnet CLI)
 ```bash
 cd FazzaAutomation
-dotnet test                                   # يبني ويشغّل كل اختبارات xUnit
-dotnet run --project tools/Automation.Smoke   # عيّنة سريعة تطبع 11/11
+dotnet test                                   # Builds and runs all xUnit tests
+dotnet run --project tools/Automation.Smoke   # Quick sample — prints 11/11
 ```
 
-النتيجة المتوقعة من العيّنة:
+Expected output from the sample:
 ```
-[6] سيناريو: balance → transfer → verify
-     رصيد المرسل قبل: 1000
+[6] Scenario: balance → transfer → verify
+     Sender balance before: 1000
   ✅ Transfer succeeded
-     رصيد المرسل بعد:  995
+     Sender balance after:  995
   ✅ Sender balance decreased by amount
- النتيجة: 11 نجاح / 0 فشل
+ Result: 11 passed / 0 failed
 ```
 
 ---
 
-## التبديل إلى الـ API الحقيقي
+## Switching to the Real API
 
-في `src/Automation.Framework/Configuration/appsettings.json`:
+In `src/Automation.Framework/Configuration/appsettings.json`:
 ```json
 "ApiSettings": {
-  "GatewayUrl":  "https://<عنوان البوابة الحقيقي>",
-  "IdentityUrl": "https://<عنوان الهوية الحقيقي>",
+  "GatewayUrl":  "https://<actual-gateway-url>",
+  "IdentityUrl": "https://<actual-identity-url>",
   "UseFakeBackend": false
 }
 ```
-- اضبط `UseFakeBackend` على `false` ليستخدم `ApiClient` الشبكة الحقيقية بدل `FakeBackendHandler`.
-- حدّث أرقام الهواتف/المستخدمين في `Users` بقيمك الفعلية.
-- عدّل مسارات الـ Endpoints وبنية الـ Models في كل خدمة لتطابق استجابات الـ API لديك.
+- Set `UseFakeBackend` to `false` so `ApiClient` uses the real network instead of `FakeBackendHandler`.
+- Update phone numbers/users in `Users` with your actual values.
+- Adjust endpoint paths and Model structures in each service to match your actual API responses.
 
 ---
 
-## كيف تضيف Microservice جديد (Card / Sulfa / Forex / Remittance / Report)
+## How to Add a New Microservice (Card / Sulfa / Forex / Remittance / Report)
 
-الخدمات الأربع الموجودة (Identity, Account, Wallet, Transfer) قالبٌ جاهز. لإضافة خدمة:
+The four existing services (Identity, Account, Wallet, Transfer) serve as a ready-to-use template. To add a service:
 
-1. أنشئ `Services/<Name>/{Endpoints, Models, Client, Flows}` على غرار خدمة Wallet.
-2. في `Composition/FrameworkRegistration.cs` أضِف سطرين:
+1. Create `Services/<Name>/{Endpoints, Models, Client, Flows}` following the Wallet service pattern.
+2. In `Composition/FrameworkRegistration.cs`, add two lines:
    ```csharp
    services.AddSingleton<<Name>Client>();
    services.AddSingleton<<Name>Flow>();
    ```
-3. أضِف مستخدمي المشروع في `appsettings.json` بحقل `"Project": "<Name>"`.
-4. (إن كان للمنتج جلسات خاصة) أنشئ `Sessions/<Name>Sessions.cs` و`Fixtures/<Name>Fixture.cs`
-   و`Collections/<Name>Collection.cs` نسخًا من نظائر Sulfa.
-5. اكتب الاختبارات تحت `Tests/<Name>/`.
+3. Add project users in `appsettings.json` with the field `"Project": "<Name>"`.
+4. (If the product has its own sessions) create `Sessions/<Name>Sessions.cs`, `Fixtures/<Name>Fixture.cs`, and `Collections/<Name>Collection.cs` as copies of their Sulfa counterparts.
+5. Write tests under `Tests/<Name>/`.
 
-لا يتغيّر أي ملف آخر.
+No other files need to change.
 
 ---
 
-## ملاحظات مهمة في التصميم
+## Important Design Notes
 
-**ترتيب الجلسات:** جلب `AccountId` لبقية المستخدمين يتم عبر توكن **Dashboard**، لذا
-`SulfaFixture` يبني Dashboard أولًا (await) ثم يبني الباقي بالتوازي عبر `PrewarmAsync`.
+**Session order:** Retrieving `AccountId` for other users is done via the **Dashboard** token, so `SulfaFixture` builds the Dashboard first (await), then builds the rest in parallel via `PrewarmAsync`.
 
-**التوازي:** xUnit يشغّل **المجموعات (Collections) بالتوازي** فيما بينها، والاختبارات داخل
-نفس المجموعة تتسلسل. بفضل `TestHost` و`SessionCache` المشتركَين على مستوى العملية، تستطيع
-تقسيم كل منتج إلى Collection مستقلّ فتعمل المنتجات بالتوازي **دون إعادة تسجيل دخول**،
-و`UserPoolManager` يمنع تشارك اختبارين متوازيين لنفس المستخدم. الإعداد في `xunit.runner.json`
-(‏`maxParallelThreads: 8`‎).
+**Parallelism:** xUnit runs **Collections in parallel** with each other, while tests within the same collection run sequentially. Thanks to `TestHost` and the process-wide shared `SessionCache`, you can split each product into its own independent Collection and they'll run in parallel **without re-authenticating**, while `UserPoolManager` prevents two parallel tests from sharing the same user. Configured in `xunit.runner.json` (`maxParallelThreads: 8`).
 
-**التوافق:** `ApiException` يرث من `HttpRequestException`، فأي `catch`/`Assert.ThrowsAsync`
-على `HttpRequestException` يبقى صالحًا، والرسالة تتضمّن رمز الحالة (401/403).
+**Compatibility:** `ApiException` inherits from `HttpRequestException`, so any `catch`/`Assert.ThrowsAsync` on `HttpRequestException` remains valid, and the message includes the status code (401/403).
 
-**عزل المستخدمين:** `UserPoolRegistry` يجمّع المستخدمين حسب `Project`، فلكل منتج مجموعته
-المعزولة تمامًا — لا تلوّث متبادل في التشغيل المتوازي.
+**User isolation:** `UserPoolRegistry` groups users by `Project`, giving each product its completely isolated pool — no cross-contamination in parallel runs.
