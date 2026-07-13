@@ -1,6 +1,7 @@
 ﻿using Automation.Framework.Context;
 using Automation.Framework.Services.Almusher.Client;
 using Automation.Framework.Services.Almusher.Models;
+using System.Text.Json;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -28,7 +29,7 @@ namespace Automation.Framework.Services.Almusher.Flow
             var reference = $"AutoTest-{DateTime.Now:yyyyMMdd-HHmmss}";
 
             var response = await _alMusheerClient.CreatePaymentChainAsync(token, id, reference);
-            var chainId = Guid.Parse(response["id"]?.ToString() ?? throw new Exception("Chain ID not found"));
+            var chainId = Guid.Parse(response.Id);
 
             _state.SetValue($"chain_{userKey}", chainId);
             return chainId;

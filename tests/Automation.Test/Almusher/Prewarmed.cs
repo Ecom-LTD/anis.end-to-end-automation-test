@@ -1,9 +1,8 @@
 ﻿using Automation.Test.Fixtures;
-using Automation.Test.Tests.Almusher;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Automation.Test.Tests.Almusher
+namespace Automation.Test.Almusher
 {
     public class Prewarmed : BaseAlmusherTest
     {

@@ -11,7 +11,7 @@ using Automation.Test.Fixtures;
 using Xunit;
 using Xunit.Abstractions;
 
-namespace Automation.Test.Tests.Almusher
+namespace Automation.Test.Almusher
 {
     [Collection("Almusher Collection")]
     public class BaseAlmusherTest

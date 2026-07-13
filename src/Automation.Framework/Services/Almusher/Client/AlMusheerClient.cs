@@ -3,7 +3,7 @@ using Automation.Framework.Core.Http;
 using Automation.Framework.Services.Almusher.Endpoint;
 using Automation.Framework.Services.Almusher.Models;
 using Newtonsoft.Json.Linq;
-
+using System.Text.Json;
 namespace Automation.Framework.Services.Almusher.Client
 {
     public class AlMusheerClient
@@ -15,7 +15,7 @@ namespace Automation.Framework.Services.Almusher.Client
             _api = api;
         }
 
-        public async Task<JObject> CreatePaymentChainAsync(string token, Guid id, string reference)
+        public async Task<CreatePaymentChainResponse> CreatePaymentChainAsync(string token, Guid id, string reference)
         {
             var body = new
             {
@@ -24,7 +24,7 @@ namespace Automation.Framework.Services.Almusher.Client
                 statement = "Automated E2E Test"
             };
 
-            var response = await _api.PostAsync<object, JObject>(
+            var response = await _api.PostAsync<object, CreatePaymentChainResponse>(
                 ConfigurationManager.Settings.ApiSettings.AnisPaymentsUrl,
                 AlmusherEndpoint.InitiatePaymentChain,
                 body,
