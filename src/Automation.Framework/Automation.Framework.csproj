@@ -1,0 +1,34 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>Automation.Framework</RootNamespace>
+    <AssemblyName>Automation.Framework</AssemblyName>
+  </PropertyGroup>
+
+  <!--
+    نستخدم الـ Shared Framework لـ ASP.NET Core للحصول على:
+      Microsoft.Extensions.DependencyInjection
+      Microsoft.Extensions.Configuration
+      System.Text.Json
+    بدون أي حزم NuGet خارجية (يبني دون اتصال).
+    لو رغبت باستخدام Newtonsoft.Json كما في كودك الأصلي، أضف:
+      <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  -->
+  <ItemGroup>
+    <FrameworkReference Include="Microsoft.AspNetCore.App" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Update="Configuration/appsettings.json">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.4" />
+  </ItemGroup>
+
+</Project>
