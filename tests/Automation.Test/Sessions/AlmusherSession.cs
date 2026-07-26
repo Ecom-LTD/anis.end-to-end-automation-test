@@ -5,54 +5,106 @@ using Automation.Framework.Core.Enums;
 
 namespace Automation.Test.Sessions
 {
+    /// <summary>
+    /// تعريف جلسات اختبار Almusher
+    /// ⚠️ ملاحظة: كل مستخدم له جلسة واحدة فقط مع عملة محددة
+    /// </summary>
     public class AlmusherSession
     {
         // ================================================================
-        // ✅ AlMusheer Users
-        // ================================================================
-
-        public static SessionOptions anispay => Build(TestUsers.anispay, SubscriptionType.Operator, true, true);
-        public static SessionOptions aniscard => Build(TestUsers.aniscard, SubscriptionType.Business, true, true);
-        public static SessionOptions hreysh => Build(TestUsers.hreysh, SubscriptionType.Operator, true, true);
-        public static SessionOptions profit => Build(TestUsers.profit, SubscriptionType.Business, true, true);
-        public static SessionOptions commission => Build(TestUsers.commission, SubscriptionType.Operator, true, true);
-        public static SessionOptions dashboard => Build(TestUsers.Dashboard, SubscriptionType.Operator, false, false);
-
-        // ================================================================
-        // ✅ Anis Card Sessions (مخصصة لجلب المحافظ بالعملات المختلفة)
+        // ✅ تعريف الجلسات - كل جلسة محددة بمستخدم + عملة
         // ================================================================
 
         /// <summary>
-        /// جلسة Anis Card مع محفظة LYD (CurrencyType = 1)
+        /// Anis Pay - محفظة LYD
+        /// </summary>
+        public static SessionOptions AnisPayLyd => Build(
+            TestUsers.anispay,
+            SubscriptionType.Operator,
+            true,
+            true,
+            CurrencyType.LYD);
+
+        /// <summary>
+        /// Anis Card - محفظة LYD
         /// </summary>
         public static SessionOptions AnisCardLyd => Build(
             TestUsers.aniscard,
             SubscriptionType.Business,
             true,
             true,
-            CurrencyType.LYD);  // ✅ LYD
+            CurrencyType.LYD);
 
         /// <summary>
-        /// جلسة Anis Card مع محفظة USD (CurrencyType = 2)
+        /// Anis Card - محفظة USD
         /// </summary>
         public static SessionOptions AnisCardUsd => Build(
             TestUsers.aniscard,
             SubscriptionType.Business,
             true,
             true,
-            CurrencyType.USD);  // ✅ USD
+            CurrencyType.USD);
 
+        /// <summary>
+        /// Hreysh - محفظة USD
+        /// </summary>
+        public static SessionOptions HreyshUsd => Build(
+            TestUsers.hreysh,
+            SubscriptionType.Operator,
+            true,
+            true,
+            CurrencyType.USD);
+
+        /// <summary>
+        /// Profit - محفظة LYD
+        /// </summary>
+        public static SessionOptions ProfitLyd => Build(
+            TestUsers.profit,
+            SubscriptionType.Business,
+            true,
+            true,
+            CurrencyType.LYD);
+
+        /// <summary>
+        /// Commission - محفظة USD
+        /// </summary>
+        public static SessionOptions CommissionUsd => Build(
+            TestUsers.commission,
+            SubscriptionType.Operator,
+            true,
+            true,
+            CurrencyType.USD);
+
+        /// <summary>
+        /// Dashboard - بدون محفظة (مشترك بين جميع المشاريع)
+        /// ⚠️ LoadWallet = false
+        /// </summary>
+        public static SessionOptions Dashboard => Build(
+            TestUsers.Dashboard,
+            SubscriptionType.Operator,
+            true,        // LoadAccount = true (مطلوب لجلب AccountId)
+            false,       // LoadWallet = false (لا يحتوي على محفظة)
+            CurrencyType.LYD);
+
+        // ================================================================
+        // ✅ مجموعات الجلسات
+        // ================================================================
+
+        /// <summary>
+        /// جميع الجلسات غير Dashboard
+        /// </summary>
         public static IEnumerable<SessionOptions> NonDashboard => new[]
         {
-            anispay,
-            aniscard,
-            hreysh,
-            profit,
-            commission
+            AnisPayLyd,
+            AnisCardLyd,
+            AnisCardUsd,
+            HreyshUsd,
+            ProfitLyd,
+            CommissionUsd
         };
 
         /// <summary>
-        /// جميع جلسات Anis Card (LYD و USD)
+        /// جلسات Anis Card (LYD و USD)
         /// </summary>
         public static IEnumerable<SessionOptions> AnisCardSessions => new[]
         {
@@ -60,8 +112,28 @@ namespace Automation.Test.Sessions
             AnisCardUsd
         };
 
+        /// <summary>
+        /// جلسات LYD
+        /// </summary>
+        public static IEnumerable<SessionOptions> LydSessions => new[]
+        {
+            AnisPayLyd,
+            AnisCardLyd,
+            ProfitLyd
+        };
+
+        /// <summary>
+        /// جلسات USD
+        /// </summary>
+        public static IEnumerable<SessionOptions> UsdSessions => new[]
+        {
+            AnisCardUsd,
+            HreyshUsd,
+            CommissionUsd
+        };
+
         // ================================================================
-        // ✅ دالة البناء (معدلة لدعم العملة)
+        // ✅ دالة البناء
         // ================================================================
 
         private static SessionOptions Build(
@@ -69,18 +141,19 @@ namespace Automation.Test.Sessions
             SubscriptionType type,
             bool loadAccount = true,
             bool loadWallet = true,
-            CurrencyType currency = CurrencyType.LYD)  // ✅ معامل العملة
+            CurrencyType currency = CurrencyType.LYD)
         {
             return new SessionOptions
             {
                 UserKey = userKey,
                 LoadAccount = loadAccount,
                 LoadWallet = loadWallet,
-                CurrencyType = currency,  // ✅ استخدام العملة المحددة
+                CurrencyType = currency,
                 RegionName = "Tripoli",
                 HolderName = "Cash",
                 SubscriptionType = type,
-                SubscriptionName = UserHelper.GetUser(userKey).SubscriptionName
+                SubscriptionName = UserHelper.GetUser(userKey).SubscriptionName,
+                TokenLifetimeMinutes = 50
             };
         }
     }

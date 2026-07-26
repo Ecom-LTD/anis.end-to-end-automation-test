@@ -13,9 +13,13 @@
         public decimal BuyAmount { get; set; }
         public decimal SellAmount { get; set; }
         public string DetailedStatement { get; set; } = "string";
-        public ProfitInfo Profit { get; set; } = new();
-        public ReturnInfo Return { get; set; } = new();
-        public CommissionInfo Commission { get; set; } = new();
+        public object? Profit { get; set; } = null;
+        public object? Return { get; set; } = null;
+        public object? Commission { get; set; } = null;
+
+        // ✅ إضافة الخصائص المفقودة
+        public decimal LydRate { get; set; }
+        public bool UsesSellCurrencyAsBase { get; set; }
     }
 
     /// <summary>
@@ -26,7 +30,7 @@
         public string ProfitWalletId { get; set; } = string.Empty;
         public string ProfitDetailedStatement { get; set; } = "string";
         public decimal TotalRatio { get; set; }
-        public List<ProfitElement> ProfitElements { get; set; } = new();
+        public List<ProfitElement> ProfitElement { get; set; } = new();
     }
 
     /// <summary>
@@ -63,6 +67,7 @@
     public class CommissionInfo
     {
         public string WalletId { get; set; } = string.Empty;
+
         public List<CommissionElement> CommissionElements { get; set; } = new();
     }
 
@@ -85,17 +90,14 @@
     /// </summary>
     public class RegularCurrencyExchangeResponse
     {
-        public RegularCurrencyExchangeData Data { get; set; } = new();
-        public string Message { get; set; } = string.Empty;
-        public bool Success { get; set; }
+        public string Id { get; set; } = string.Empty;
+
     }
 
-    public class RegularCurrencyExchangeData
+
+
+    public class ConfirmCurrencyExchangeResponse
     {
-        public string OperationId { get; set; } = string.Empty;
-        public string ChainId { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
-        public decimal BuyAmount { get; set; }
-        public decimal SellAmount { get; set; }
+        public string Id { get; set; } = string.Empty;
     }
 }

@@ -10,7 +10,6 @@ using Automation.Framework.Shared;
 using Automation.Test.Fixtures;
 using Xunit;
 using Xunit.Abstractions;
-
 namespace Automation.Test.Almusher
 {
     [Collection("Almusher Collection")]

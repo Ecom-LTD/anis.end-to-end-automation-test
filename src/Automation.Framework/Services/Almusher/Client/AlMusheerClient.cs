@@ -3,7 +3,7 @@ using Automation.Framework.Core.Http;
 using Automation.Framework.Services.Almusher.Endpoint;
 using Automation.Framework.Services.Almusher.Models;
 using Newtonsoft.Json.Linq;
-using System.Text.Json;
+
 namespace Automation.Framework.Services.Almusher.Client
 {
     public class AlMusheerClient
@@ -15,39 +15,125 @@ namespace Automation.Framework.Services.Almusher.Client
             _api = api;
         }
 
-        public async Task<CreatePaymentChainResponse> CreatePaymentChainAsync(string token, Guid id, string reference)
-        {
-            var body = new
-            {
-                id,
-                reference,
-                statement = "Automated E2E Test"
-            };
+        // ================================================================
+        // ✅ 1. إنشاء سلسلة دفع جديدة
+        // ================================================================
 
-            var response = await _api.PostAsync<object, CreatePaymentChainResponse>(
+        public async Task<ApiResponse<CreatePaymentChainResponse>> CreatePaymentChainAsync(
+            string token,
+            CreatePaymentChainRequest request)
+        {
+            var response = await _api.PostAsync<CreatePaymentChainRequest, CreatePaymentChainResponse>(
                 ConfigurationManager.Settings.ApiSettings.AnisPaymentsUrl,
                 AlmusherEndpoint.InitiatePaymentChain,
-                body,
+                request,
                 token);
 
-            return response.Data;
+            return response;
         }
 
-        /// <summary>
-        /// تنفيذ صرف العملات العادي في سلسلة الدفع
-        /// </summary>
-        public async Task<RegularCurrencyExchangeResponse> RegularCurrencyExchangeAsync(
+        // ================================================================
+        // ✅ 2. صرف عملات عادي (Regular Currency Exchange)
+        // ================================================================
+
+        public async Task<ApiResponse<RegularCurrencyExchangeResponse>> RegularCurrencyExchangeAsync(
             string token,
             string chainId,
             RegularCurrencyExchangeRequest request)
         {
             var response = await _api.PostAsync<RegularCurrencyExchangeRequest, RegularCurrencyExchangeResponse>(
-                ConfigurationManager.Settings.ApiSettings.GatewayUrl,
+                ConfigurationManager.Settings.ApiSettings.AnisPaymentsUrl,
                 AlmusherEndpoint.RegularCurrencyExchange(Guid.Parse(chainId)),
                 request,
                 token);
 
-            return response.Data;
+            return response;
+        }
+
+        // ================================================================
+        // ✅ 3. تأكيد صرف العملات
+        // ================================================================
+
+        public async Task<ApiResponse<ConfirmCurrencyExchangeResponse>> ConfirmCurrencyExchangeAsync(
+            string token,
+            string chainId,
+            string operationId)
+        {
+            var response = await _api.PatchAsync<object, ConfirmCurrencyExchangeResponse>(
+                ConfigurationManager.Settings.ApiSettings.AnisPaymentsUrl,
+                AlmusherEndpoint.ConfirmCurrencyExchange(Guid.Parse(chainId), Guid.Parse(operationId)),
+                null,
+                token);
+
+            return response;
+        }
+
+        // ================================================================
+        // ✅ 4. جلب تفاصيل صرف العملات
+        // ================================================================
+
+        public async Task<ApiResponse<ExchangeDetailsResponse>> GetExchangeDetailsAsync(
+            string token,
+            string chainId,
+            string operationId)
+        {
+            var response = await _api.GetAsync<ExchangeDetailsResponse>(
+                ConfigurationManager.Settings.ApiSettings.AnisPaymentsUrl,
+                AlmusherEndpoint.GetExchangeDetails(Guid.Parse(chainId), Guid.Parse(operationId)),
+                token);
+
+            return response;
+        }
+
+        // ================================================================
+        // ✅ 5. جلب معلومات متوسط السعر
+        // ================================================================
+
+        public async Task<ApiResponse<AverageRateInfoResponse>> GetAverageRateInfoAsync(
+            string token,
+            string walletId)
+        {
+            var response = await _api.GetAsync<AverageRateInfoResponse>(
+                ConfigurationManager.Settings.ApiSettings.AnisPaymentsUrl,
+                AlmusherEndpoint.AverageRateInfo(Guid.Parse(walletId)),
+                token);
+
+            return response;
+        }
+
+        // ================================================================
+        // ✅ 6. صرف عملات أجنبية إلى أجنبية (Foreign to Foreign)
+        // ================================================================
+
+        public async Task<ApiResponse<ForeignToForeignExchangeResponse>> ForeignToForeignExchangeAsync(
+            string token,
+            string chainId,
+            ForeignToForeignExchangeRequest request)
+        {
+            var response = await _api.PostAsync<ForeignToForeignExchangeRequest, ForeignToForeignExchangeResponse>(
+                ConfigurationManager.Settings.ApiSettings.AnisPaymentsUrl,
+                AlmusherEndpoint.ForeignToForeignExchange(Guid.Parse(chainId)),
+                request,
+                token);
+
+            return response;
+        }
+
+        // ================================================================
+        // ✅ 7. الحصول على نسبة USD
+        // ================================================================
+
+        public async Task<ApiResponse<UsdRatioResponse>> GetUsdRatioAsync(
+            string token,
+            string chainId,
+            string operationId)
+        {
+            var response = await _api.GetAsync<UsdRatioResponse>(
+                ConfigurationManager.Settings.ApiSettings.AnisPaymentsUrl,
+                AlmusherEndpoint.GetUsdRatio(Guid.Parse(chainId), Guid.Parse(operationId)),
+                token);
+
+            return response;
         }
     }
 }
