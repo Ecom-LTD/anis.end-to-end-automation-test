@@ -24,7 +24,7 @@ using Automation.Framework.Services.FazzaTopup.Client;
 using Automation.Framework.Services.FazzaTopup.Flow;
 using Automation.Framework.Services.Region.Flow;
 using Automation.Framework.Services.Region.Client;
-
+using Automation.Framework.Services.AccountReadiness.Flow;
 using Automation.Framework.Services.Almusher.Client;
 using Automation.Framework.Services.Almusher.Flow;
 using Automation.Framework.Testing;
@@ -94,7 +94,8 @@ namespace Automation.Framework.Composition
             services.AddSingleton<SessionCache>();
             services.AddSingleton<ResilientSession>();
 
-
+            services.AddSingleton<AccountReadinessFlow>();
+            services.AddSingleton<FazzaLimitReadinessFlow>();
 
             return services;
         }

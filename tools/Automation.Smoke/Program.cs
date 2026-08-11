@@ -3,8 +3,9 @@ using Automation.Framework.Composition;
 using Automation.Framework.Constants;
 using Automation.Framework.Core.Session;
 using Automation.Framework.Core.UserPool;
-using Automation.Framework.Enums;
-using Automation.Framework.Flows;
+using Automation.Framework.Core.Enums;
+using Automation.Framework.Services.Wallet.Flow;
+using Automation.Framework.Services.Transfer.Flow;
 using Automation.Framework.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 

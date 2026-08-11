@@ -1,8 +1,6 @@
 ﻿using Automation.Framework.Context;
 using Automation.Framework.Services.FazzaTopup.Client;
 using Automation.Framework.Services.FazzaTopup.Models;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
 
 namespace Automation.Framework.Services.FazzaTopup.Flow
 {
@@ -11,14 +9,12 @@ namespace Automation.Framework.Services.FazzaTopup.Flow
         private readonly FazzaTopUpClient _fazzaTopUpClient;
         private readonly StateManager _state;
 
-
         public FazzaTopUpFlow(
             FazzaTopUpClient fazzaTopUpClient,
             StateManager state)
         {
             _fazzaTopUpClient = fazzaTopUpClient;
             _state = state;
-
         }
 
         public async Task<string> SetAccountFazzaDeptMaxLimitAsync(
@@ -41,7 +37,14 @@ namespace Automation.Framework.Services.FazzaTopup.Flow
                 await _fazzaTopUpClient.SetFazzaDeptMaxLimitAsync(
                     token, request);
 
-            return response ?? "Failed to set Fazza dept max limit.";
+            if (string.IsNullOrWhiteSpace(response))
+            {
+                throw new InvalidOperationException(
+                    "Failed to set Fazza account maximum debt limit. " +
+                    "The API returned an empty response.");
+            }
+
+            return response;
         }
 
         // ✅ دالة جديدة: طلب سلفة
@@ -87,6 +90,64 @@ namespace Automation.Framework.Services.FazzaTopup.Flow
             return await _fazzaTopUpClient.GetSulfaAccountsAsync(token, phone);
         }
 
+        // ✅ تعديل عدد طلبات السلف الإضافية للحساب (زيادة أو تخفيض)
+        public async Task<string> ChangeSulfaExtraRequestCountAsync(
+            string userKey,
+            Guid accountId,
+            int number,
+            bool isReducingExtraCount)
+        {
+            var token = _state.GetToken(userKey);
+
+            var request = new ChangeSulfaExtraRequestCountRequest
+            {
+                AccountId = accountId,
+                Number = number,
+                IsReducingExtraCount = isReducingExtraCount
+            };
+
+            var response = await _fazzaTopUpClient.ChangeSulfaExtraRequestCountAsync(token, request);
+            return response ?? "Failed to change sulfa extra request count.";
+        }
+
+        // ✅ التمديد الدائم لوقت السلف للحساب (زيادة أو تخفيض)
+        public async Task<string> SetSulfaExtraGracePeriodAsync(
+            string userKey,
+            Guid accountId,
+            int hours,
+            bool isReducingExtraGracePeriod)
+        {
+            var token = _state.GetToken(userKey);
+
+            var request = new SetSulfaExtraGracePeriodRequest
+            {
+                AccountId = accountId,
+                Hours = hours,
+                IsReducingExtraGracePeriod = isReducingExtraGracePeriod
+            };
+
+            var response = await _fazzaTopUpClient.SetSulfaExtraGracePeriodAsync(token, request);
+            return response ?? "Failed to set sulfa extra grace period.";
+        }
+
+        // ✅ التمديد المؤقت لوقت السلف للحساب (إضافة فقط)
+        public async Task<string> AddSulfaProvisionalExtraGracePeriodAsync(
+            string userKey,
+            Guid accountId,
+            int hours)
+        {
+            var token = _state.GetToken(userKey);
+
+            var request = new AddSulfaProvisionalExtraGracePeriodRequest
+            {
+                AccountId = accountId,
+                Hours = hours
+            };
+
+            var response = await _fazzaTopUpClient.AddSulfaProvisionalExtraGracePeriodAsync(token, request);
+            return response ?? "Failed to add sulfa provisional extra grace period.";
+        }
+
         // ========== ✅ دوال المنطقة (Region) ==========
 
         /// <summary>
@@ -112,20 +173,23 @@ namespace Automation.Framework.Services.FazzaTopup.Flow
         //}
 
 
-        /// <summary>
-        /// ✅ جلب بيانات المنطقة الكاملة (تأخذ العنصر الأول من الـ List)
-        /// </summary>
         public async Task<RegionSulfaFullData?> GetRegionFullDataAsync(
-            string token,
-            string regionId)
+             string token,
+             string regionId)
         {
-            var response = await _fazzaTopUpClient.GetRegionSulfaDataAsync(token, regionId);
+            var response =
+                await _fazzaTopUpClient.GetRegionSulfaDataAsync(
+                    token,
+                    regionId);
 
-            if (response == null || response.Count == 0)
+            if (response is null || response.Count == 0)
                 return null;
 
-            // ✅ إرجاع العنصر الأول (لأن الـ API يعيد Array)
-            return response[0];
+            return response.FirstOrDefault(region =>
+                string.Equals(
+                    region.Id,
+                    regionId,
+                    StringComparison.OrdinalIgnoreCase));
         }
 
         /// <summary>

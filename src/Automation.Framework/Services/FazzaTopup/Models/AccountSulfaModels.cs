@@ -1,9 +1,4 @@
 ﻿using Newtonsoft.Json;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace Automation.Framework.Services.FazzaTopup.Models
 {
@@ -12,10 +7,36 @@ namespace Automation.Framework.Services.FazzaTopup.Models
         public Guid AccountId { get; set; }
         public decimal MaxFazaaLimit { get; set; } = 0;
     }
+
     public class SetFazzaDeptMaxLimitResponse
     {
         public string Message { get; set; } = string.Empty;
     }
+
+    public class ChangeSulfaExtraRequestCountRequest
+    {
+        public Guid AccountId { get; set; }
+        public int Number { get; set; }
+        public bool IsReducingExtraCount { get; set; }
+    }
+
+    public class SetSulfaExtraGracePeriodRequest
+    {
+        public Guid AccountId { get; set; }
+        public int Hours { get; set; }
+        public bool IsReducingExtraGracePeriod { get; set; }
+    }
+    public class AddSulfaProvisionalExtraGracePeriodRequest
+    {
+        public Guid AccountId { get; set; }
+        public int Hours { get; set; }
+    }
+
+    public class SulfaLimitOperationResponse
+    {
+        public string Message { get; set; } = string.Empty;
+    }
+
     public class SulfaAccountResponse
     {
         [JsonProperty("results")]

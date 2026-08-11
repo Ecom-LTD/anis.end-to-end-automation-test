@@ -1,7 +1,4 @@
 ﻿using Automation.Framework.Core.Http;
-using Newtonsoft.Json.Linq;
-using Newtonsoft.Json;
-
 using Automation.Framework.Services.FazzaTopup.Models;
 using Automation.Framework.Services.FazzaTopup.Endpoint;
 using Automation.Framework.Configuration;
@@ -32,7 +29,6 @@ namespace Automation.Framework.Services.FazzaTopup.Client
             return response.Data.Message;
         }
 
-
         // ✅ دالة جديدة: طلب سلفة (Sulfa Request)
         public async Task<string> RequestSulfaAsync(
             string token,
@@ -51,7 +47,6 @@ namespace Automation.Framework.Services.FazzaTopup.Client
 
             return response.Data.Message;
         }
-
 
         // ✅ دالة جديدة: جلب حسابات السلفة
         public async Task<List<SulfaAccount>> GetSulfaAccountsAsync(
@@ -74,6 +69,47 @@ namespace Automation.Framework.Services.FazzaTopup.Client
             return response.Data.Results ?? new List<SulfaAccount>();
         }
 
+        // ✅ تعديل عدد طلبات السلف الإضافية (زيادة/تخفيض)
+        public async Task<string> ChangeSulfaExtraRequestCountAsync(
+            string token, ChangeSulfaExtraRequestCountRequest request)
+        {
+            var response =
+                await _api.PostAsync<ChangeSulfaExtraRequestCountRequest, SulfaLimitOperationResponse>(
+                    ConfigurationManager.Settings.ApiSettings.FinOpsManagementUrl,
+                    FazzatopupEndpoint.ChangeSulfaExtraRequestCount(),
+                    request,
+                    token);
+
+            return response.Data.Message;
+        }
+
+        // ✅ التمديد الدائم لوقت السلف (زيادة/تخفيض)
+        public async Task<string> SetSulfaExtraGracePeriodAsync(
+            string token, SetSulfaExtraGracePeriodRequest request)
+        {
+            var response =
+                await _api.PostAsync<SetSulfaExtraGracePeriodRequest, SulfaLimitOperationResponse>(
+                    ConfigurationManager.Settings.ApiSettings.FinOpsManagementUrl,
+                    FazzatopupEndpoint.SetSulfaExtraGracePeriod(),
+                    request,
+                    token);
+
+            return response.Data.Message;
+        }
+
+        // ✅ التمديد المؤقت لوقت السلف (إضافة فقط)
+        public async Task<string> AddSulfaProvisionalExtraGracePeriodAsync(
+            string token, AddSulfaProvisionalExtraGracePeriodRequest request)
+        {
+            var response =
+                await _api.PostAsync<AddSulfaProvisionalExtraGracePeriodRequest, SulfaLimitOperationResponse>(
+                    ConfigurationManager.Settings.ApiSettings.FinOpsManagementUrl,
+                    FazzatopupEndpoint.AddSulfaProvisionalExtraGracePeriod(),
+                    request,
+                    token);
+
+            return response.Data.Message;
+        }
 
         // ========== ✅ دوال المنطقة (Region) الجديدة ==========
 
@@ -92,8 +128,8 @@ namespace Automation.Framework.Services.FazzaTopup.Client
         //    return response?.Data;
         //}
         public async Task<List<RegionSulfaFullData>?> GetRegionSulfaDataAsync(
-    string token,
-    string regionId)
+                 string token,
+                 string regionId)
         {
             var response = await _api.GetAsync<List<RegionSulfaFullData>>(
                 ConfigurationManager.Settings.ApiSettings.FinOpsManagementUrl,
