@@ -6,7 +6,7 @@ using Xunit.Abstractions;
 
 namespace Automation.Test.Tests.Almusher
 {
-    [Collection("Almusher Collection")]
+    
     public class AverageRateDisplayTests : BaseAlmusherTest
     {
         public AverageRateDisplayTests(ITestOutputHelper output, AlmuhserFixture fixture)

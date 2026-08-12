@@ -33,6 +33,20 @@ namespace Automation.Framework.Services.Wallet.Client
 
             return "Wallet updated successfully";
         }
+
+        public async Task<ApiResponse<CreateWalletResponse>> CreateWalletAsync(string token, CreateWalletRequest request)
+        {
+            var response = await _api.PostAsync<CreateWalletRequest, CreateWalletResponse>(
+                ConfigurationManager.Settings.ApiSettings.GatewayUrl,
+                WalletEndpoints.CreateWallet,
+                request,
+                token);
+
+            return response;
+        }
+
+
+ 
     }
 
 }

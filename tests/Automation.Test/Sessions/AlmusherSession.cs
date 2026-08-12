@@ -23,7 +23,8 @@ namespace Automation.Test.Sessions
             SubscriptionType.Operator,
             true,
             true,
-            CurrencyType.LYD);
+            CurrencyType.LYD,
+            true);
 
         /// <summary>
         /// Anis Card - محفظة LYD
@@ -43,7 +44,8 @@ namespace Automation.Test.Sessions
             SubscriptionType.Business,
             true,
             true,
-            CurrencyType.USD);
+            CurrencyType.USD,
+            true);
 
         /// <summary>
         /// Hreysh - محفظة USD
@@ -53,17 +55,19 @@ namespace Automation.Test.Sessions
             SubscriptionType.Operator,
             true,
             true,
-            CurrencyType.USD);
+            CurrencyType.USD,
+            true);
 
         /// <summary>
         /// Profit - محفظة LYD
         /// </summary>
         public static SessionOptions ProfitLyd => Build(
-            TestUsers.profit,
-            SubscriptionType.Business,
-            true,
-            true,
-            CurrencyType.LYD);
+     TestUsers.profit,
+     SubscriptionType.Business,   // ✅ Business
+     true,
+     true,
+     CurrencyType.LYD,
+     autoCreateWallet: true);
 
         /// <summary>
         /// Commission - محفظة USD
@@ -73,7 +77,8 @@ namespace Automation.Test.Sessions
             SubscriptionType.Operator,
             true,
             true,
-            CurrencyType.USD);
+            CurrencyType.USD,
+        true);
 
         /// <summary>
         /// Dashboard - بدون محفظة (مشترك بين جميع المشاريع)
@@ -141,7 +146,8 @@ namespace Automation.Test.Sessions
             SubscriptionType type,
             bool loadAccount = true,
             bool loadWallet = true,
-            CurrencyType currency = CurrencyType.LYD)
+            CurrencyType currency = CurrencyType.LYD,
+            bool autoCreateWallet = false)
         {
             return new SessionOptions
             {
@@ -153,7 +159,8 @@ namespace Automation.Test.Sessions
                 HolderName = "Cash",
                 SubscriptionType = type,
                 SubscriptionName = UserHelper.GetUser(userKey).SubscriptionName,
-                TokenLifetimeMinutes = 50
+                TokenLifetimeMinutes = 50,
+                AutoCreateWalletIfNotFound = autoCreateWallet
             };
         }
     }

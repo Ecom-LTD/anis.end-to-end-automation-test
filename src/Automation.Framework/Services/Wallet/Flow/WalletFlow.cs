@@ -1,7 +1,10 @@
 using Automation.Framework.Constants;
 using Automation.Framework.Context;
 using Automation.Framework.Core.Enums;
+using Automation.Framework.Core.Http;
 using Automation.Framework.Services.Wallet.Client;
+using Automation.Framework.Services.Wallet.Models;
+using Automation.Framework.Services.Region.Flow;
 
 namespace Automation.Framework.Services.Wallet.Flow;
 
@@ -9,6 +12,7 @@ public class WalletFlow
 {
     private readonly WalletClient _walletClient;
     private readonly StateManager _state;
+    private readonly RegionFlow _regionFlow;
 
     public WalletFlow(WalletClient walletClient, StateManager state)
     {
@@ -16,10 +20,14 @@ public class WalletFlow
         _state = state;
     }
 
-    /// <summary>جلب (WalletId, SubscriptionId, RegionId) دفعة واحدة وتخزينها في State.</summary>
     public async Task<(Guid WalletId, Guid SubscriptionId, Guid RegionId)> GetAllIdsAsync(
-        string userKey, CurrencyType currencyType, string regionName, string holderName,
-        SubscriptionType subscriptionType, string subscriptionName)
+      string userKey,
+      CurrencyType currencyType,
+      string regionName,
+      string holderName,
+      SubscriptionType subscriptionType,
+      string subscriptionName,
+      bool autoCreateIfNotFound = false)  // ✅ افتراضياً = false (لا يؤثر على المشاريع الأخرى)
     {
         var token = _state.GetToken(userKey);
         var profile = await _walletClient.GetProfileAsync(token);
@@ -29,8 +37,50 @@ public class WalletFlow
             ?? throw new Exception($"Subscription not found: {subscriptionName}");
 
         var wallet = subscription.Wallets.FirstOrDefault(w =>
-            w.CurrencyType == currencyType && w.RegionName == regionName && w.HolderName == holderName)
-            ?? throw new Exception($"Wallet not found for Currency={currencyType}, Region={regionName}");
+            w.CurrencyType == currencyType && w.RegionName == regionName && w.HolderName == holderName);
+
+        // ✅ إذا لم تكن المحفظة موجودة و autoCreateIfNotFound = true → قم بإنشائها
+        if (wallet == null && autoCreateIfNotFound)
+        {
+            var Dashboard = TestUsers.Dashboard;
+            // 1. جلب RegionId
+            var regionId = await _regionFlow.GetRegionIdByNameAsync(Dashboard, regionName);
+
+            // 2. إنشاء المحفظة
+            var createResponse = await CreateWalletAsync(
+                userKey,
+                subscription.SubscriptionId,
+                Guid.Parse(regionId),
+                currencyType);
+
+            if (createResponse.StatusCode == System.Net.HttpStatusCode.OK && createResponse.Data.Success)
+            {
+                // 3. إعادة جلب الـ Profile بعد الإنشاء
+                profile = await _walletClient.GetProfileAsync(token);
+
+                // 4. البحث عن المحفظة الجديدة
+                subscription = profile.Data.Subscriptions.FirstOrDefault(s =>
+                    s.SubscriptionType == subscriptionType && s.SubscriptionName == subscriptionName);
+
+                wallet = subscription?.Wallets.FirstOrDefault(w =>
+                    w.CurrencyType == currencyType && w.RegionName == regionName && w.HolderName == holderName);
+
+                if (wallet != null)
+                {
+                    // ✅ تخزين في State
+                    _state.SetValue(StateKeys.Wallet(userKey, currencyType), wallet.WalletId);
+                    _state.SetValue(StateKeys.RegionId(userKey, currencyType), wallet.RegionId);
+                    _state.SetValue(StateKeys.SubscriptionId(userKey, subscriptionType), subscription.SubscriptionId);
+
+                    return (wallet.WalletId, subscription.SubscriptionId, wallet.RegionId);
+                }
+            }
+
+            throw new Exception($"Failed to create wallet for Currency={currencyType}, Region={regionName}");
+        }
+
+        if (wallet == null)
+            throw new Exception($"Wallet not found for Currency={currencyType}, Region={regionName}");
 
         _state.SetValue(StateKeys.Wallet(userKey, currencyType), wallet.WalletId);
         _state.SetValue(StateKeys.RegionId(userKey, currencyType), wallet.RegionId);
@@ -168,18 +218,38 @@ public class WalletFlow
         return await GetBalanceAsync(userKey, walletId);
     }
 
-    //public async Task<decimal> GetBalanceAsync(string userKey, Guid walletId)
-    //{
-    //    var token = _state.GetToken(userKey);
-    //    var resp = await _walletClient.GetBalanceAsync(walletId, token);
-    //    return resp.Data;
-    //}
+    /// <summary>
+    /// إنشاء محفظة جديدة لمشترك معين
+    /// </summary>
+    public async Task<ApiResponse<CreateWalletResponse>> CreateWalletAsync(
+        string userKey,
+        Guid subscriptionId,
+        Guid regionId,
+        CurrencyType currencyType,
+        Guid? holderId = null)
+    {
+        // 1. جلب التوكن
+        var token = _state.GetToken(userKey);
 
-    //public async Task<string> UpdateDefaultWalletAsync(string userKey, string walletId)
-    //{
-    //    var token = _state.GetToken(userKey);
-    //    return await _walletClient.UpdateDefaultWalletAsync(token, walletId);
-    //}
+        // 2. بناء الطلب
+        var request = new CreateWalletRequest
+        {
+            SubscriptionId = subscriptionId,
+            RegionId = regionId,
+            HolderId = holderId,
+            CurrencyType = (int)currencyType
+        };
 
+        // 3. استدعاء الـ Client (يرجع ApiResponse كاملاً)
+        var response = await _walletClient.CreateWalletAsync(token, request);
+
+        // 4. إرجاع ApiResponse كاملاً
+        return response;  // ✅ صحيح
+    }
+    public async Task<ProfileResponse> GetProfileAsync(string userKey)
+    {
+        var token = _state.GetToken(userKey);
+        return await _walletClient.GetProfileAsync(token);
+    }
 
 }

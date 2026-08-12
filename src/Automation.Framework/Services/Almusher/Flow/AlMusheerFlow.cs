@@ -116,125 +116,23 @@ namespace Automation.Framework.Services.Almusher.Flow
             return await _alMusheerClient.GetUsdRatioAsync(token, chainId, operationId);
         }
 
-        // ================================================================
-        // ✅ 8. بناء طلب صرف العملات
-        // ================================================================
-
-        public RegularCurrencyExchangeRequest BuildExchangeRequest(
-            string operationId,
-            string buyCreditorWalletId,
-            string buyDebitorWalletId,
-            string sellCreditorWalletId,
-            string sellDebitorWalletId,
-            decimal buyAmount,
-            decimal sellAmount,
-            decimal lydRate,
-            bool usesSellCurrencyAsBase = false,
-            string detailedStatement = "Currency exchange operation")
-        {
-            return new RegularCurrencyExchangeRequest
-            {
-                OperationId = operationId,
-                BuyCreditorWalletId = buyCreditorWalletId,
-                BuyDebitorWalletId = buyDebitorWalletId,
-                SellCreditorWalletId = sellCreditorWalletId,
-                SellDebitorWalletId = sellDebitorWalletId,
-                BuyAmount = buyAmount,
-                SellAmount = sellAmount,
-                DetailedStatement = detailedStatement,
-                LydRate = lydRate,
-                UsesSellCurrencyAsBase = usesSellCurrencyAsBase
-            };
-        }
+       
 
         // ================================================================
-        // ✅ 9. إضافة ربح
-        // ================================================================
-
-        public RegularCurrencyExchangeRequest AddProfit(
-            RegularCurrencyExchangeRequest request,
-            string profitWalletId,
-            decimal totalRatio,
-            string profitDetailedStatement = "Profit from exchange",
-            params (string description, decimal ratio)[] profitElements)
-        {
-            request.Profit = new ProfitInfo
-            {
-                ProfitWalletId = profitWalletId,
-                ProfitDetailedStatement = profitDetailedStatement,
-                TotalRatio = totalRatio,
-                ProfitElement = profitElements.Select(p => new ProfitElement
-                {
-                    Description = p.description,
-                    Ratio = p.ratio
-                }).ToList()
-            };
-
-            return request;
-        }
-
-        // ================================================================
-        // ✅ 10. إضافة إرجاع
-        // ================================================================
-
-        public RegularCurrencyExchangeRequest AddReturn(
-            RegularCurrencyExchangeRequest request,
-            string returnWalletId,
-            decimal totalAmount,
-            params (string description, decimal amount)[] returnElements)
-        {
-            request.Return = new ReturnInfo
-            {
-                ReturnWalletId = returnWalletId,
-                TotalAmount = totalAmount,
-                ReturnElements = returnElements.Select(r => new ReturnElement
-                {
-                    Description = r.description,
-                    Amount = r.amount
-                }).ToList()
-            };
-
-            return request;
-        }
-
-        // ================================================================
-        // ✅ 11. إضافة عمولة
-        // ================================================================
-
-        public RegularCurrencyExchangeRequest AddCommission(
-            RegularCurrencyExchangeRequest request,
-            string walletId,
-            params (string description, decimal amount, bool isIncluded)[] commissionElements)
-        {
-            request.Commission = new CommissionInfo
-            {
-                WalletId = walletId,
-                CommissionElements = commissionElements.Select(c => new CommissionElement
-                {
-                    Description = c.description,
-                    Amount = c.amount,
-                    IsIncluded = c.isIncluded
-                }).ToList()
-            };
-
-            return request;
-        }
-
-        // ================================================================
-        // ✅ 12. بناء طلب صرف أجنبي إلى أجنبي
+        // ✅ 8. بناء طلب صرف أجنبي إلى أجنبي
         // ================================================================
 
         public ForeignToForeignExchangeRequest BuildForeignToForeignRequest(
-            string operationId,
-            string buyCreditorWalletId,
-            string buyDebitorWalletId,
-            string sellCreditorWalletId,
-            string sellDebitorWalletId,
-            decimal buyAmount,
-            decimal sellAmount,
-            decimal lydRate,
-            bool usesSellCurrencyAsBase = false,
-            string detailedStatement = "Foreign to foreign exchange")
+     string operationId,
+     string buyCreditorWalletId,
+     string buyDebitorWalletId,
+     string sellCreditorWalletId,
+     string sellDebitorWalletId,
+     decimal buyAmount,
+     decimal sellAmount,
+     decimal lydRate,
+     bool usesSellCurrencyAsBase = false,
+     string detailedStatement = "Foreign to foreign exchange")
         {
             return new ForeignToForeignExchangeRequest
             {
@@ -248,61 +146,15 @@ namespace Automation.Framework.Services.Almusher.Flow
                 LydRate = lydRate,
                 UsesSellCurrencyAsBase = usesSellCurrencyAsBase,
                 DetailedStatement = detailedStatement,
-                Return = new ForeignToForeignReturnConfig(),
-                Commission = new ForeignToForeignCommissionConfig()
+                // ✅ لا نرسل Return و Commission إذا لم تكن مطلوبة
+                Return = null,
+                Commission = null
             };
         }
+     
 
         // ================================================================
-        // ✅ 13. إضافة إرجاع لطلب أجنبي إلى أجنبي
-        // ================================================================
-
-        public ForeignToForeignExchangeRequest AddForeignToForeignReturn(
-            ForeignToForeignExchangeRequest request,
-            string creditorReturnWalletId,
-            string debitorReturnWalletId,
-            decimal totalAmount,
-            params (string description, decimal amount)[] returnElements)
-        {
-            request.Return = new ForeignToForeignReturnConfig
-            {
-                CreditorReturnWalletId = creditorReturnWalletId,
-                DebitorReturnWalletId = debitorReturnWalletId,
-                TotalAmount = totalAmount,
-                ReturnElements = returnElements.Select(r => new ForeignToForeignReturnElement
-                {
-                    Description = r.description,
-                    Amount = r.amount
-                }).ToList()
-            };
-
-            return request;
-        }
-
-        // ================================================================
-        // ✅ 14. إضافة عمولة لطلب أجنبي إلى أجنبي
-        // ================================================================
-
-        public ForeignToForeignExchangeRequest AddForeignToForeignCommission(
-            ForeignToForeignExchangeRequest request,
-            string walletId,
-            params (string description, decimal amount, bool isIncluded)[] commissionElements)
-        {
-            request.Commission = new ForeignToForeignCommissionConfig
-            {
-                WalletId = walletId,
-                CommissionElements = commissionElements.Select(c => new ForeignToForeignCommissionElement
-                {
-                    Description = c.description,
-                    Amount = c.amount,
-                    IsIncluded = c.isIncluded
-                }).ToList()
-            };
-
-            return request;
-        }
-        // ================================================================
-        // ✅ 15. إنشاء Builder لطلب صرف العملات (جديد)
+        // ✅ 9. إنشاء Builder لطلب صرف العملات (جديد)
         // ================================================================
 
         public ExchangeRequestBuilder CreateExchangeRequest(
@@ -317,6 +169,35 @@ namespace Automation.Framework.Services.Almusher.Flow
             string detailedStatement = "Currency exchange operation")
         {
             return new ExchangeRequestBuilder(
+                operationId,
+                buyCreditorWalletId,
+                buyDebitorWalletId,
+                sellCreditorWalletId,
+                sellDebitorWalletId,
+                buyAmount,
+                sellAmount,
+                lydRate,
+                detailedStatement);
+        }
+
+
+        // ================================================================
+        // ✅ 10. إنشاء Builder لطلب صرف أجنبي إلى أجنبي (Foreign to Foreign)
+        // ================================================================
+
+        public ForeignExchangeRequestBuilder CreateForeignExchangeRequest(
+            string operationId,
+            string buyCreditorWalletId,
+            string buyDebitorWalletId,
+            string sellCreditorWalletId,
+            string sellDebitorWalletId,
+            decimal buyAmount,
+            decimal sellAmount,
+            decimal lydRate,
+            string detailedStatement = "Foreign to foreign exchange"
+            )
+        {
+            return new ForeignExchangeRequestBuilder(
                 operationId,
                 buyCreditorWalletId,
                 buyDebitorWalletId,
