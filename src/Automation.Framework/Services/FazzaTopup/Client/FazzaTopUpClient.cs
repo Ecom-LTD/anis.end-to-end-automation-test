@@ -31,21 +31,36 @@ namespace Automation.Framework.Services.FazzaTopup.Client
 
         // ✅ دالة جديدة: طلب سلفة (Sulfa Request)
         public async Task<string> RequestSulfaAsync(
-            string token,
-            SulfaRequest request)
+          string token,
+          SulfaRequest request)
         {
-            // ✅ إضافة PinNumber في Headers
-            var headers = new Dictionary<string, string> { { "Pin-Number", request.PinNumber ?? "001100" } };
+            var headers =
+                new Dictionary<string, string>
+                {
+            {
+                "Pin-Number",
+                request.PinNumber ?? "001100"
+            }
+                };
 
-            // ✅ استخدام PostWithHeadersAsync بدلاً من PostAsync
-            var response = await _api.PostWithHeadersAsync<SulfaRequest, SulfaResponse>(
-                ConfigurationManager.Settings.ApiSettings.FinOpsConsumersUrl,
-                FazzatopupEndpoint.RequestSulfa(),
-                request,
-                token,
-                headers);
+            var response =
+                await _api.PostWithHeadersForStringAsync(
+                    ConfigurationManager
+                        .Settings
+                        .ApiSettings
+                        .FinOpsConsumersUrl,
+                    FazzatopupEndpoint.RequestSulfa(),
+                    request,
+                    token,
+                    headers);
 
-            return response.Data.Message;
+            if (string.IsNullOrWhiteSpace(response.Data))
+            {
+                throw new InvalidOperationException(
+                    "Sulfa request succeeded but the API returned an empty response.");
+            }
+
+            return response.Data;
         }
 
         // ✅ دالة جديدة: جلب حسابات السلفة

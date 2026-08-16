@@ -446,15 +446,6 @@ public sealed class AccountReadinessFlow
         if (totalDue <= 0m)
             return;
 
-        if (payerBalance < totalDue)
-        {
-            throw new InvalidOperationException(
-                $"Payer account '{payerSession.PhoneNumber}' does not " +
-                $"have enough wallet balance to settle the debt. " +
-                $"Balance: {payerBalance}, TotalDue: {totalDue}, " +
-                $"Missing: {totalDue - payerBalance}.");
-        }
-
         log?.Invoke(
             $"[AccountReadiness] Transferring {totalDue} from " +
             $"{payerSession.PhoneNumber} to " +
