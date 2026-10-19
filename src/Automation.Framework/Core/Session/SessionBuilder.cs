@@ -32,7 +32,9 @@ namespace Automation.Framework.Builders
             {
                 UserKey = options.UserKey,
                 PhoneNumber = user.PhoneNumber,
-                Role = user.Role
+                Role = user.Role,
+                SubscriptionName = user.SubscriptionName,
+                AutoCreateWalletIfNotFound = options.AutoCreateWalletIfNotFound
             };
 
             // 1) تسجيل الدخول دائمًا
@@ -44,23 +46,85 @@ namespace Automation.Framework.Builders
             {
                 var dashboardToken = _state.GetToken(TestUsers.Dashboard);
                 var accountId = await _accountFlow.GetAccountIdByPhoneNumberUsingTokenAsync(
-                dashboardToken, session.PhoneNumber);
+                    dashboardToken, session.PhoneNumber);
                 session.AccountId = accountId.ToString();
             }
 
             // 3) Wallet + Subscription + Region
             if (options.LoadWallet)
             {
-                var (walletId, subscriptionId, regionId) = await _walletFlow.GetAllIdsAsync(
-                    session.UserKey, options.CurrencyType, options.RegionName, options.HolderName,
-                    options.SubscriptionType, options.SubscriptionName);
+                try
+                {
+                    var (walletId, subscriptionId, regionId) = await _walletFlow.GetAllIdsAsync(
+                        session.UserKey,
+                        options.CurrencyType,
+                        options.RegionName,
+                        options.HolderName,
+                        options.SubscriptionType,
+                        options.SubscriptionName,
+                        options.AutoCreateWalletIfNotFound);
 
-                session.WalletId = walletId.ToString();
-                session.SubscriptionId = subscriptionId.ToString();
-                session.RegionId = regionId.ToString();
+                    // ✅ التحقق من صحة النتيجة (معرف المحفظة ليس فارغاً)
+                    if (walletId != Guid.Empty)
+                    {
+                        session.WalletId = walletId.ToString();
+                        session.SubscriptionId = subscriptionId.ToString();
+                        session.RegionId = regionId.ToString();
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // ✅ إذا فشل جلب المحفظة، نحاول جلب SubscriptionId فقط
+                    Console.WriteLine($"⚠️ Wallet not loaded for {session.UserKey}: {ex.Message}");
+                    await LoadSubscriptionIdOnly(session, options);
+                }
+            }
+            else
+            {
+                // ✅ حتى إذا كان LoadWallet = false، نحاول جلب SubscriptionId
+                await LoadSubscriptionIdOnly(session, options);
             }
 
             return session;
         }
+
+
+        /// <summary>
+        /// ✅ جلب SubscriptionId فقط (بدون محفظة)
+        /// </summary>
+        private async Task LoadSubscriptionIdOnly(TestSession session, SessionOptions options)
+        {
+            try
+            {
+                var profile = await _walletFlow.GetProfileAsync(session.UserKey);
+
+                var subscription = profile.Data.Subscriptions
+                    .FirstOrDefault(s =>
+                        s.SubscriptionType == options.SubscriptionType &&
+                        s.SubscriptionName == options.SubscriptionName)
+                    ?? profile.Data.Subscriptions.FirstOrDefault();
+
+                if (subscription != null)
+                {
+                    session.SubscriptionId = subscription.SubscriptionId.ToString();
+                    session.SubscriptionName = subscription.SubscriptionName;
+
+                    // ✅ تخزين SubscriptionId في State للاستخدام لاحقاً
+                    _state.SetValue(StateKeys.SubscriptionId(session.UserKey, options.SubscriptionType), subscription.SubscriptionId);
+
+                    Console.WriteLine($"✅ SubscriptionId loaded for {session.UserKey}: {session.SubscriptionId}");
+                }
+                else
+                {
+                    Console.WriteLine($"⚠️ No subscription found for {session.UserKey}");
+                }
+            }
+            catch (Exception ex)
+            {
+                Console.WriteLine($"⚠️ Failed to load SubscriptionId for {session.UserKey}: {ex.Message}");
+            }
+        }
     }
 }
+    
+

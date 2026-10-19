@@ -13,6 +13,11 @@ namespace Automation.Framework.Builders
         public string HolderName { get; set; } = "Cash";
         public SubscriptionType SubscriptionType { get; set; }
         public string SubscriptionName { get; set; } = string.Empty;
+        /// <summary>
+        /// ✅ إنشاء المحفظة تلقائياً إذا لم تكن موجودة
+        /// ⚠️ افتراضياً = false (لا يؤثر على المشاريع الأخرى)
+        /// </summary>
+        public bool AutoCreateWalletIfNotFound { get; set; } = false;
 
         /// <summary>مدة صلاحية التوكن بالدقائق (للكاش). أقل قليلًا من الـ 60 الفعلية.</summary>
         public int TokenLifetimeMinutes { get; set; } = 50;

@@ -8,7 +8,7 @@ namespace Automation.Framework.Services.Wallet.Endpoints
         public static string AllWallet(string phone) =>
            $"/api/management/v1.0/wallets/load?value={phone}";
         public static string UpdateDefaultWallet = "/api/consumers/v1.0/profile/update-default-wallet";
-        public static string CreateWallet = "/api/consumers/v1.0/wallets/create";
+        public static string CreateWallet = "/api/management/v1.0/wallets/create";
         
     }
 }

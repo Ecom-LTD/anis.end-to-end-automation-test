@@ -54,4 +54,23 @@ namespace Automation.Framework.Services.Wallet.Models
         public string Message { get; set; } = string.Empty;
     }
 
+
+
+    public class CreateWalletRequest
+    {
+        public Guid SubscriptionId { get; set; }
+        public Guid RegionId { get; set; }
+        public Guid? HolderId { get; set; } // يمكن أن يكون null
+        public int CurrencyType { get; set; } // 1: LYD, 2: USD, 3: EGB, 4: USDT
+    }
+
+    // ✅ Response مبسط - فقط رسالة نجاح
+    public class CreateWalletResponse
+    {
+        public string Message { get; set; } = string.Empty;
+
+        public bool Success =>
+            !string.IsNullOrEmpty(Message) &&
+            Message.Contains("enabled successfully", StringComparison.OrdinalIgnoreCase);
+    }
 }

@@ -9,6 +9,11 @@ namespace Automation.Framework.Shared
         public string WalletId { get; set; } = string.Empty;
         public string SubscriptionId { get; set; } = string.Empty;
         public string RegionId { get; set; } = string.Empty;
+        // ✅ إضافة الخاصية المفقودة
+        public string SubscriptionName { get; set; } = string.Empty;
+
+        // ✅ إضافة الخاصية المفقودة (للتحكم في الإنشاء التلقائي)
+        public bool AutoCreateWalletIfNotFound { get; set; } = false;
         public string Role { get; set; } = string.Empty;
 
         public bool IsAuthenticated => !string.IsNullOrEmpty(Token);
@@ -27,6 +32,8 @@ namespace Automation.Framework.Shared
             SubscriptionId = other.SubscriptionId;
             RegionId = other.RegionId;
             PhoneNumber = other.PhoneNumber;
+            SubscriptionName = other.SubscriptionName;
+            AutoCreateWalletIfNotFound = other.AutoCreateWalletIfNotFound;
         }
 
         public override string ToString() => $"[{UserKey}] {PhoneNumber}";
