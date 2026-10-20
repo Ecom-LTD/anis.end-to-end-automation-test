@@ -10,4 +10,8 @@ namespace Automation.Test.Collections
 
     [CollectionDefinition("Almusher Collection")]
     public class AlmusherCollection : ICollectionFixture<AlmuhserFixture> { }
+    [CollectionDefinition("Fazza Collection")]
+    public class FazzaCollection : ICollectionFixture<FazzaFixture>
+    { // لا شيء هنا — مجرد علامة (Marker) يقرأها xUnit.
+    }
 }
