@@ -56,109 +56,71 @@ public sealed class AccountReadinessFlow
     /// الحساب الذي عليه TotalDue. في السيناريو الحالي هو حساب الأعمال.
     /// </summary>
     public async Task<AccountReadinessResult> PrepareAsync(
-        TestSession reportSession,
-        TestSession payerSession,
-        TestSession debtorSession,
-        AccountReadinessOptions? options = null,
-        Action<string>? log = null)
+      TestSession reportSession,
+      TestSession payerSession,
+      TestSession debtorSession,
+      AccountReadinessOptions? options = null,
+      Action<string>? log = null,
+      Func<Task>? onAccountNotFound = null)
     {
         options ??= new AccountReadinessOptions();
-
         ValidateOptions(options);
-
         ValidateSessions(reportSession, payerSession, debtorSession);
 
-        log?.Invoke($"[AccountReadiness] Preparing debtor account " + $"{debtorSession.PhoneNumber}.");
+        log?.Invoke($"[AccountReadiness] Preparing debtor account {debtorSession.PhoneNumber}.");
 
-        /*
-         * نقرأ رصيد الحساب الدافع قبل قراءة الدين.
-         * هذا يثبت أن المحفظة موجودة وقابلة للوصول،
-         * كما سنستخدم الرصيد لاحقًا للتحقق من إمكانية سداد TotalDue.
-         */
         var payerBalance = options.ValidatePayerWallet
             ? await GetWalletBalanceAsync(payerSession)
             : 0m;
 
-        /*
-         * التحقق من محفظة الحساب المدين ليس ضروريًا لتنفيذ التحويل،
-         * لكنه مفيد للتأكد من أن بيانات الحساب كاملة وصحيحة.
-         */
         var debtorBalance = options.ValidateDebtorWallet
             ? await GetWalletBalanceAsync(debtorSession)
             : 0m;
 
-        /*
-         * قراءة تقرير Cashflow ومطابقة العنصر مع الحساب المدين.
-         * لا نستخدم FirstOrDefault بصورة عشوائية.
-         */
+        // ✅ الاستدعاء الأول (يمرر onAccountNotFound)
         var debtReport = await GetDebtReportAsync(
             reportSession,
-            debtorSession);
+            debtorSession,
+            onAccountNotFound,
+            log);
 
-        var totalDueBefore = NormalizeDebt(
-            debtReport.TotalDue,
-            options.DebtTolerance);
+        var totalDueBefore = NormalizeDebt(debtReport.TotalDue, options.DebtTolerance);
 
-        log?.Invoke(
-            $"[AccountReadiness] TotalDue before settlement: " +
-            $"{totalDueBefore}.");
+        log?.Invoke($"[AccountReadiness] TotalDue before settlement: {totalDueBefore}.");
 
         var transferredAmount = 0m;
         var totalDueAfter = totalDueBefore;
 
-        /*
-         * يتم تنفيذ التحويل فقط عندما:
-         * 1. خيار السداد التلقائي مفعّل.
-         * 2. TotalDue أكبر من هامش الصفر.
-         */
-        if (options.SettleDueDebt &&
-            totalDueBefore > options.DebtTolerance)
+        if (options.SettleDueDebt && totalDueBefore > options.DebtTolerance)
         {
-            await SettleDebtAsync(
-                payerSession,
-                debtorSession,
-                payerBalance,
-                totalDueBefore,
-                log);
+            await SettleDebtAsync(payerSession, debtorSession, payerBalance, totalDueBefore, log);
 
             transferredAmount = totalDueBefore;
 
-            /*
-             * نجاح TransferAsync لا يعني بالضرورة أن Cashflow
-             * تم تحديثه فورًا، لذلك نعيد القراءة عدة مرات.
-             */
             totalDueAfter = await WaitForDebtSettlementAsync(
                 reportSession,
                 debtorSession,
                 options,
                 log);
 
-            /*
-             * نجلب أحدث تقرير حتى تكون النتيجة المعادة
-             * محتوية على أحدث حالة للحساب.
-             */
+            // ✅ الاستدعاء الثاني (نمرر null لأنه لا يحتاج تفعيل بعد السداد)
             debtReport = await GetDebtReportAsync(
                 reportSession,
-                debtorSession);
+                debtorSession,
+                null,
+                log);
         }
-        
-        /*
-         * إذا كان السداد التلقائي معطلًا، نعيد القيمة الموجودة كما هي.
-         * وإذا كان RequireZeroTotalDue مفعّلًا، نفشل بوضوح.
-         */
-        if (options.RequireZeroTotalDue &&
-            totalDueAfter > options.DebtTolerance)
+
+        if (options.RequireZeroTotalDue && totalDueAfter > options.DebtTolerance)
         {
             throw new InvalidOperationException(
-                $"Account '{debtorSession.PhoneNumber}' is not ready. " +
-                $"TotalDue is still {totalDueAfter}.");
+                $"Account '{debtorSession.PhoneNumber}' is not ready. TotalDue is still {totalDueAfter}.");
         }
 
         log?.Invoke(
             totalDueBefore <= options.DebtTolerance
                 ? "[AccountReadiness] No due debt was found."
-                : $"[AccountReadiness] Settlement completed. " +
-                  $"TotalDue after settlement: {totalDueAfter}.");
+                : $"[AccountReadiness] Settlement completed. TotalDue after settlement: {totalDueAfter}.");
 
         return new AccountReadinessResult
         {
@@ -332,7 +294,9 @@ public sealed class AccountReadinessFlow
     /// </summary>
     private async Task<CashflowReportItem> GetDebtReportAsync(
         TestSession reportSession,
-        TestSession debtorSession)
+        TestSession debtorSession,
+        Func<Task>? onAccountNotFound,
+        Action<string>? log)
     {
         var response = await _resilience.ExecuteAsync(
             reportSession,
@@ -340,12 +304,29 @@ public sealed class AccountReadinessFlow
                 reportSession.UserKey,
                 debtorSession.PhoneNumber));
 
-        if (response?.Results is null ||
-            response.Results.Count == 0)
+        // ✅ التعديل هنا: تنفيذ الـ Callback بدلاً من رمي الاستثناء مباشرة
+        if (response?.Results is null || response.Results.Count == 0)
         {
-            throw new InvalidOperationException(
-                $"Cashflow report did not return any result for " +
-                $"'{debtorSession.PhoneNumber}'.");
+            if (onAccountNotFound != null)
+            {
+                log?.Invoke($"[AccountReadiness] Account '{debtorSession.PhoneNumber}' not found. Invoking activation callback...");
+                await onAccountNotFound();
+
+                // إعادة القراءة بعد التفعيل
+                response = await _resilience.ExecuteAsync(
+                    reportSession,
+                    () => _cashFlow.GetCashflowReportAsync(
+                        reportSession.UserKey,
+                        debtorSession.PhoneNumber));
+            }
+
+            // إذا لم تنجح القراءة بعد التفعيل أو لم يتم تمرير Callback
+            if (response?.Results is null || response.Results.Count == 0)
+            {
+                throw new InvalidOperationException(
+                    $"Cashflow report did not return any result for " +
+                    $"'{debtorSession.PhoneNumber}'.");
+            }
         }
 
         /*
@@ -468,10 +449,10 @@ public sealed class AccountReadinessFlow
     /// عدة محاولات قبل اعتبار السداد فاشلًا.
     /// </summary>
     private async Task<decimal> WaitForDebtSettlementAsync(
-        TestSession reportSession,
-        TestSession debtorSession,
-        AccountReadinessOptions options,
-        Action<string>? log)
+     TestSession reportSession,
+     TestSession debtorSession,
+     AccountReadinessOptions options,
+     Action<string>? log)
     {
         decimal lastTotalDue = decimal.MaxValue;
 
@@ -479,9 +460,12 @@ public sealed class AccountReadinessFlow
              attempt <= options.DebtVerificationAttempts;
              attempt++)
         {
+            // ✅ التعديل: تمرير null و log
             var report = await GetDebtReportAsync(
                 reportSession,
-                debtorSession);
+                debtorSession,
+                null,
+                log);
 
             lastTotalDue = NormalizeDebt(
                 report.TotalDue,
@@ -504,7 +488,6 @@ public sealed class AccountReadinessFlow
 
         return lastTotalDue;
     }
-
     /// <summary>
     /// تحويل القيم الصغيرة جدًا إلى صفر.
     /// </summary>
