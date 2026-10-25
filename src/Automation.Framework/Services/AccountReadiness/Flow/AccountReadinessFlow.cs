@@ -1,11 +1,13 @@
-﻿using System.Text;
-using Automation.Framework.Core.Session;
+﻿using Automation.Framework.Core.Session;
+using Automation.Framework.Helpers;
 using Automation.Framework.Services.AccountReadiness.Models;
 using Automation.Framework.Services.CashFlowReport.Flow;
 using Automation.Framework.Services.CashFlowReport.Models;
 using Automation.Framework.Services.Transfer.Flow;
 using Automation.Framework.Services.Wallet.Flow;
 using Automation.Framework.Shared;
+
+using System.Text;
 
 namespace Automation.Framework.Services.AccountReadiness.Flow;
 
@@ -374,41 +376,19 @@ public sealed class AccountReadinessFlow
         CashflowReportItem item,
         TestSession debtorSession)
     {
-        if (string.IsNullOrWhiteSpace(item.AccountId) ||
-            string.IsNullOrWhiteSpace(debtorSession.AccountId))
-        {
-            return false;
-        }
-
-        if (!Guid.TryParse(item.AccountId, out var reportAccountId) ||
-            !Guid.TryParse(
-                debtorSession.AccountId,
-                out var sessionAccountId))
-        {
-            return string.Equals(
-                item.AccountId.Trim(),
-                debtorSession.AccountId.Trim(),
-                StringComparison.OrdinalIgnoreCase);
-        }
-
-        return reportAccountId == sessionAccountId;
+        // استخدام الكلاس المساعد بدلاً من المنطق المعقد
+        return AccountMatcher.IdsMatch(item.AccountId, debtorSession.AccountId);
     }
 
     /// <summary>
     /// مطابقة رقم الهاتف بعد إزالة المسافات والرموز.
     /// </summary>
     private static bool IsPhoneNumberMatch(
-        CashflowReportItem item,
-        TestSession debtorSession)
+       CashflowReportItem item,
+       TestSession debtorSession)
     {
-        var reportPhone = NormalizePhoneNumber(
-            item.PhoneNumber);
-
-        var sessionPhone = NormalizePhoneNumber(
-            debtorSession.PhoneNumber);
-
-        return !string.IsNullOrWhiteSpace(reportPhone) &&
-               reportPhone == sessionPhone;
+        // استخدام الكلاس المساعد (يقوم بتطبيع الهاتف والمقارنة)
+        return AccountMatcher.PhonesMatch(item.PhoneNumber, debtorSession.PhoneNumber);
     }
 
     /// <summary>
@@ -500,28 +480,5 @@ public sealed class AccountReadinessFlow
             : totalDue;
     }
 
-    /// <summary>
-    /// توحيد رقم الهاتف بإبقاء الأرقام فقط.
-    ///
-    /// مثال:
-    /// +218 91-123-4567
-    /// يصبح:
-    /// 218911234567
-    /// </summary>
-    private static string NormalizePhoneNumber(
-        string? phoneNumber)
-    {
-        if (string.IsNullOrWhiteSpace(phoneNumber))
-            return string.Empty;
 
-        var normalized = new StringBuilder();
-
-        foreach (var character in phoneNumber)
-        {
-            if (char.IsDigit(character))
-                normalized.Append(character);
-        }
-
-        return normalized.ToString();
-    }
 }
