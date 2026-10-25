@@ -4,13 +4,14 @@ using Automation.Framework.Helpers.Almusher;
 using Automation.Framework.Services.Almusher.Models;
 using Automation.Test.Almusher;
 using Automation.Test.Fixtures;
+using Automation.Test.Infrastructure;
 using System.Net;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Automation.Test.Almusher.USD_TO_EGB
 {
-    [Collection("Almusher Collection")]
+    [Collection(CollectionNames.Almusher)]
     public class ForeignToForeignExchangeTests : BaseAlmusherTest
     {
         public ForeignToForeignExchangeTests(ITestOutputHelper output, AlmuhserFixture fixture)

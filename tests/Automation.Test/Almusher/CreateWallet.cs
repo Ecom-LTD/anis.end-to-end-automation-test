@@ -2,13 +2,14 @@
 using Automation.Framework.Helpers.Almusher;
 using Automation.Test.Almusher;
 using Automation.Test.Fixtures;
+using Automation.Test.Infrastructure;
 using System.Net;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Automation.Test.Tests.Wallet
 {
-    [Collection("Almusher Collection")]
+    [Collection(CollectionNames.Almusher)]
     public class CreateWalletTests : BaseAlmusherTest
     {
         public CreateWalletTests(ITestOutputHelper output, AlmuhserFixture fixture)

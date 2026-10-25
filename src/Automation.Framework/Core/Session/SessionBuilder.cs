@@ -53,31 +53,29 @@ namespace Automation.Framework.Builders
             // 3) Wallet + Subscription + Region
             if (options.LoadWallet)
             {
-                try
-                {
-                    var (walletId, subscriptionId, regionId) = await _walletFlow.GetAllIdsAsync(
-                        session.UserKey,
-                        options.CurrencyType,
-                        options.RegionName,
-                        options.HolderName,
-                        options.SubscriptionType,
-                        options.SubscriptionName,
-                        options.AutoCreateWalletIfNotFound);
+                // ✅ لا try/catch — نترك الاستثناء يظهر بوضوح
+                var (walletId, subscriptionId, regionId) = await _walletFlow.GetAllIdsAsync(
+                    session.UserKey,
+                    options.CurrencyType,
+                    options.RegionName,
+                    options.HolderName,
+                    options.SubscriptionType,
+                    options.SubscriptionName,
+                    options.AutoCreateWalletIfNotFound);
 
-                    // ✅ التحقق من صحة النتيجة (معرف المحفظة ليس فارغاً)
-                    if (walletId != Guid.Empty)
-                    {
-                        session.WalletId = walletId.ToString();
-                        session.SubscriptionId = subscriptionId.ToString();
-                        session.RegionId = regionId.ToString();
-                    }
-                }
-                catch (Exception ex)
+                if (walletId == Guid.Empty)
                 {
-                    // ✅ إذا فشل جلب المحفظة، نحاول جلب SubscriptionId فقط
-                    Console.WriteLine($"⚠️ Wallet not loaded for {session.UserKey}: {ex.Message}");
-                    await LoadSubscriptionIdOnly(session, options);
+                    throw new InvalidOperationException(
+                        $"Wallet '{options.CurrencyType}/{options.RegionName}/{options.HolderName}' " +
+                        $"not found for user '{session.UserKey}'. " +
+                        $"Subscription: '{options.SubscriptionName}' " +
+                        $"(type: {options.SubscriptionType}). " +
+                        $"Check these values in appsettings.json vs the user's actual subscriptions.");
                 }
+
+                session.WalletId = walletId.ToString();
+                session.SubscriptionId = subscriptionId.ToString();
+                session.RegionId = regionId.ToString();
             }
             else
             {

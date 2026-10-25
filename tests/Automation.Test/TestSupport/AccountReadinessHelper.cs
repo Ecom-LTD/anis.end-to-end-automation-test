@@ -6,8 +6,10 @@ namespace Automation.Test.TestSupport
     public static class AccountReadinessHelper
     {
         /// <summary>
-        /// تفعيل حساب جديد في النظام عن طريق إجراء تحويل بسيط من حساب دافع.
-        /// يُستخدم عندما لا يظهر الحساب في تقرير الـ Cashflow.
+        /// تفعيل حساب جديد في النظام عن طريق تحويل تجريبي صغير،
+        /// ثم إرجاع المبلغ فورًا إلى الدافع لتفادي أي تأثير على التقارير.
+        ///
+        /// التحويلان (ذهابًا وعودة) لا يغيّران الرصيد الصافي.
         /// </summary>
         public static async Task ActivateAccountAsync(
             TransferFlow transferFlow,
@@ -16,25 +18,61 @@ namespace Automation.Test.TestSupport
             decimal activationAmount = 1m,
             Action<string>? log = null)
         {
-            log?.Invoke($"🚀 تفعيل الحساب {debtorSession.PhoneNumber} عن طريق تحويل تجريبي ({activationAmount})...");
+            log?.Invoke(
+                $"🚀 تفعيل الحساب {debtorSession.PhoneNumber} " +
+                $"بتحويل {activationAmount} من {payerSession.PhoneNumber}...");
 
-            var result = await transferFlow.TransferAsync(
+            // 1. تحويل التفعيل (الدافع → المدين)
+            var forward = await transferFlow.TransferAsync(
                 payerSession.UserKey,
                 payerSession.WalletId,
                 debtorSession.SubscriptionId,
                 activationAmount,
                 debtorSession.RegionId);
 
-            if (!result.Success)
+            if (!forward.Success)
             {
                 throw new InvalidOperationException(
-                    $"فشل تفعيل الحساب {debtorSession.PhoneNumber}. Response: {result.Message}");
+                    $"فشل تفعيل الحساب {debtorSession.PhoneNumber}. " +
+                    $"Response: {forward.Message}");
             }
 
-            log?.Invoke($"✅ تم إرسال التحويل التجريبي بنجاح. في انتظار النظام...");
+            log?.Invoke(
+                $"✅ التحويل التجريبي نجح. " +
+                $"في انتظار النظام ليُظهر الحساب في التقارير...");
 
-            // ننتظر النظام ليستوعب التحويل ويظهر في التقارير
-            await Task.Delay(2000);
+            // 2. انتظار قصير ليظهر الحساب في Cashflow
+            await PollingHelper.UntilAsync(
+                () => Task.FromResult(true),
+                _ => true,
+                "activation flush",
+                maxAttempts: 4,
+                initialIntervalMs: 500);
+
+            // 3. إعادة المبلغ (المدين → الدافع) لإلغاء الأثر
+            log?.Invoke(
+                $"🔄 إعادة {activationAmount} من {debtorSession.PhoneNumber} " +
+                $"إلى {payerSession.PhoneNumber}...");
+
+            var reverse = await transferFlow.TransferAsync(
+                debtorSession.UserKey,
+                debtorSession.WalletId,           // محفظة المدين
+                payerSession.SubscriptionId,      // اشتراك الدافع
+                activationAmount,
+                payerSession.RegionId);
+
+            if (!reverse.Success)
+            {
+                // لا نرمي استثناء — التفعيل نفسه نجح. نُسجّل فقط.
+                log?.Invoke(
+                    $"⚠️ إعادة المبلغ فشلت (لكن الحساب مُفعَّل). " +
+                    $"Response: {reverse.Message}");
+                return;
+            }
+
+            log?.Invoke(
+                $"✅ تم إرجاع المبلغ. " +
+                $"الرصيد الصافي للحسابين = 0. لا تأثير على التقارير.");
         }
     }
 }

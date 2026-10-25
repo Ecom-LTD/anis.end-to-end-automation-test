@@ -1,25 +1,24 @@
 using Automation.Framework.Core.Session;
 using Automation.Framework.Core.UserPool;
-using Automation.Framework.Shared;
-using Automation.Test.Fixtures.Fazza;
-using Automation.Framework.Services.FazzaTopup.Flow;
-using Automation.Framework.Services.CashFlowReport.Flow;
-using Automation.Framework.Services.OperatorCashback.Flow;
+using Automation.Framework.Services.Account.Flow;
 using Automation.Framework.Services.Cart.Flow;
+using Automation.Framework.Services.CashFlowReport.Flow;
 using Automation.Framework.Services.Catalog.Flow;
+using Automation.Framework.Services.FazzaTopup.Flow;
+using Automation.Framework.Services.Identity.Flow;
+using Automation.Framework.Services.OperatorCashback.Flow;
 using Automation.Framework.Services.Region.Flow;    
 using Automation.Framework.Services.Transfer.Flow;
 using Automation.Framework.Services.Wallet.Flow;
-using Automation.Framework.Services.Account.Flow;
-using Automation.Framework.Services.Identity.Flow;
-
-
+using Automation.Framework.Shared;
+using Automation.Test.Fixtures.Fazza;
+using Automation.Test.Infrastructure;
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Automation.Test.Tests.Sulfa.Base
 {
-    [Collection("Sulfa Collection")]
+    [Collection(CollectionNames.Sulfa)]
     public abstract class BaseSulfaTest
     {
         protected readonly ITestOutputHelper Output;

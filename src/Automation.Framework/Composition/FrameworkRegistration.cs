@@ -64,14 +64,14 @@ namespace Automation.Framework.Composition
             // ✅ Cart Service (جديد)
           
             services.AddSingleton<CartFlow>();
-            services.AddSingleton<CatalogFlow>();
+
             // ---------- الـ Flows ----------
             services.AddSingleton<AuthenticationFlow>();
             services.AddSingleton<AccountFlow>();
             services.AddSingleton<WalletFlow>();
             services.AddSingleton<TransferFlow>();
-            services.AddSingleton<CartFlow>();
-            services.AddSingleton<CatalogFlow>();
+     
+     
 
             // Fazza Service
             services.AddSingleton<FazzaTopUpClient>();   // الـ Client

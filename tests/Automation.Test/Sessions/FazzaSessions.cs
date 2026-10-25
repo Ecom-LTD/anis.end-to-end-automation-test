@@ -25,7 +25,7 @@ namespace Automation.Test.Sessions
         /// </summary>
         public static SessionOptions FazzaUser1 => Build(
             userKey: TestUsers.FazzaUser1,
-            type: SubscriptionType.Business,
+            type: SubscriptionType.Operator,
             loadAccount: true,
             loadWallet: true);
 

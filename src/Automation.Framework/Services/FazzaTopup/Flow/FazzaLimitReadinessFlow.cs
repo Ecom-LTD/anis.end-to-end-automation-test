@@ -502,7 +502,7 @@ public sealed class FazzaLimitReadinessFlow
 
         var response = await _resilience.ExecuteAsync(
             dashboardSession,
-            () => _fazzaTopUp.SetAccountFazzaDeptMaxLimitAsync(
+            () => _fazzaTopUp.SetAccountFazzaDebtMaxLimitAsync(
                 dashboardSession.UserKey,
                 accountSession.AccountIdGuid,
                 newMaximumLimit));

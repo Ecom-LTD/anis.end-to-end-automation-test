@@ -140,7 +140,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                             Dashboard,
                             () =>
                                 FazzaTopUp
-                                    .SetAccountFazzaDeptMaxLimitAsync(
+                                    .SetAccountFazzaDebtMaxLimitAsync(
                                         Dashboard.UserKey,
                                         SulfaBusiness.AccountIdGuid,
                                         newLimit)));
@@ -219,7 +219,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
 
             var exception =
                 await Assert.ThrowsAsync<ApiException>(() =>
-                    FazzaTopUp.SetAccountFazzaDeptMaxLimitAsync(
+                    FazzaTopUp.SetAccountFazzaDebtMaxLimitAsync(
                         Dashboard.UserKey,
                         SulfaBusiness.AccountIdGuid,
                         invalidLimit));
@@ -332,7 +332,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
 
             var exception =
                 await Assert.ThrowsAsync<ApiException>(() =>
-                    FazzaTopUp.SetAccountFazzaDeptMaxLimitAsync(
+                    FazzaTopUp.SetAccountFazzaDebtMaxLimitAsync(
                         Dashboard.UserKey,
                         SulfaBusiness.AccountIdGuid,
                         invalidLimit));
@@ -423,7 +423,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                             Dashboard,
                             () =>
                                 FazzaTopUp
-                                    .SetAccountFazzaDeptMaxLimitAsync(
+                                    .SetAccountFazzaDebtMaxLimitAsync(
                                         Dashboard.UserKey,
                                         SulfaBusiness.AccountIdGuid,
                                         maximumAllowedForThisAccount)));
@@ -513,7 +513,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                         Dashboard,
                         () =>
                             FazzaTopUp
-                                .SetAccountFazzaDeptMaxLimitAsync(
+                                .SetAccountFazzaDebtMaxLimitAsync(
                                     Dashboard.UserKey,
                                     SulfaBusiness.AccountIdGuid,
                                     currentLimit)));
@@ -565,7 +565,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
 
             var exception =
                 await Assert.ThrowsAsync<ApiException>(() =>
-                    FazzaTopUp.SetAccountFazzaDeptMaxLimitAsync(
+                    FazzaTopUp.SetAccountFazzaDebtMaxLimitAsync(
                         Dashboard.UserKey,
                         SulfaBusiness.AccountIdGuid,
                         invalidLimit));
@@ -639,7 +639,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                                 Dashboard,
                                 () =>
                                     FazzaTopUp
-                                        .SetAccountFazzaDeptMaxLimitAsync(
+                                        .SetAccountFazzaDebtMaxLimitAsync(
                                             Dashboard.UserKey,
                                             SulfaBusiness.AccountIdGuid,
                                             preparationLimit)));
@@ -660,7 +660,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                             Dashboard,
                             () =>
                                 FazzaTopUp
-                                    .SetAccountFazzaDeptMaxLimitAsync(
+                                    .SetAccountFazzaDebtMaxLimitAsync(
                                         Dashboard.UserKey,
                                         SulfaBusiness.AccountIdGuid,
                                         0m)));
@@ -731,7 +731,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
 
                 var exception =
                     await Assert.ThrowsAsync<ApiException>(() =>
-                        FazzaTopUp.SetAccountFazzaDeptMaxLimitAsync(
+                        FazzaTopUp.SetAccountFazzaDebtMaxLimitAsync(
                             Dashboard.UserKey,
                             SulfaBusiness.AccountIdGuid,
                             0m));
@@ -848,7 +848,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
 
                 var exception =
                     await Assert.ThrowsAsync<ApiException>(() =>
-                        FazzaTopUp.SetAccountFazzaDeptMaxLimitAsync(
+                        FazzaTopUp.SetAccountFazzaDebtMaxLimitAsync(
                             Dashboard.UserKey,
                             SulfaBusiness.AccountIdGuid,
                             invalidLimit));
@@ -962,7 +962,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                             Dashboard,
                             () =>
                                 FazzaTopUp
-                                    .SetAccountFazzaDeptMaxLimitAsync(
+                                    .SetAccountFazzaDebtMaxLimitAsync(
                                         Dashboard.UserKey,
                                         SulfaBusiness.AccountIdGuid,
                                         newLimit)));
@@ -1117,7 +1117,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                     Dashboard,
                     () =>
                         FazzaTopUp.GetRegionFullDataAsync(
-                            Dashboard.Token,
+                            Dashboard.UserKey,
                             SulfaBusiness.RegionId));
 
             Assert.NotNull(region);
@@ -1476,7 +1476,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                         Dashboard,
                         () =>
                             FazzaTopUp
-                                .SetAccountFazzaDeptMaxLimitAsync(
+                                .SetAccountFazzaDebtMaxLimitAsync(
                                     Dashboard.UserKey,
                                     session.AccountIdGuid,
                                     originalLimit)));
@@ -1678,7 +1678,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                                 Dashboard,
                                 () =>
                                     FazzaTopUp
-                                        .SetAccountFazzaDeptMaxLimitAsync(
+                                        .SetAccountFazzaDebtMaxLimitAsync(
                                             Dashboard.UserKey,
                                             SulfaBusiness.AccountIdGuid,
                                             requiredBusinessLimit)));
@@ -1701,7 +1701,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                                 Dashboard,
                                 () =>
                                     FazzaTopUp
-                                        .SetAccountFazzaDeptMaxLimitAsync(
+                                        .SetAccountFazzaDebtMaxLimitAsync(
                                             Dashboard.UserKey,
                                             SulfaOperator.AccountIdGuid,
                                             requiredOperatorLimit)));

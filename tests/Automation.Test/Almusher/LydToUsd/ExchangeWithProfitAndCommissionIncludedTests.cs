@@ -4,6 +4,7 @@ using Automation.Framework.Helpers.Almusher;
 using Automation.Framework.Services.Almusher.Models;
 using Automation.Test.Almusher;
 using Automation.Test.Fixtures;
+using Automation.Test.Infrastructure;
 using Newtonsoft.Json.Linq;
 using System.Net;
 using Xunit;
@@ -11,7 +12,7 @@ using Xunit.Abstractions;
 
 namespace Automation.Test.Tests.Almusher
 {
-    [Collection("Almusher Collection")]
+    [Collection(CollectionNames.Almusher)]
     public class ExchangeWithProfitAndCommissionIncludedTests : BaseAlmusherTest
     {
         public ExchangeWithProfitAndCommissionIncludedTests(ITestOutputHelper output, AlmuhserFixture fixture)

@@ -8,11 +8,12 @@ using Automation.Framework.Services.Transfer.Flow;
 using Automation.Framework.Services.Wallet.Flow;
 using Automation.Framework.Shared;
 using Automation.Test.Fixtures;
+using Automation.Test.Infrastructure;
 using Xunit;
 using Xunit.Abstractions;
 namespace Automation.Test.Almusher
 {
-    [Collection("Almusher Collection")]
+    [Collection(CollectionNames.Almusher)]
     public class BaseAlmusherTest
     {
         protected readonly ITestOutputHelper Output;

@@ -27,7 +27,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                 "RegionId should not be null or empty.");
 
             var before = await FazzaTopUp.GetRegionFullDataAsync(
-                Dashboard.Token,
+                Dashboard.UserKey,
                 regionId);
 
             Assert.NotNull(before);
@@ -91,7 +91,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                 "RegionId should not be null or empty.");
 
             var initialData = await FazzaTopUp.GetRegionFullDataAsync(
-                Dashboard.Token,
+                Dashboard.UserKey,
                 regionId);
 
             Assert.NotNull(initialData);
@@ -211,7 +211,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                 "RegionId should not be null or empty.");
 
             var before = await FazzaTopUp.GetRegionFullDataAsync(
-                Dashboard.Token,
+                Dashboard.UserKey,
                 regionId);
 
             Assert.NotNull(before);
@@ -234,7 +234,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
 
             var exception = await Assert.ThrowsAsync<ApiException>(() =>
                 FazzaTopUp.SetRegionMaxFazaaLimitAsync(
-                    Dashboard.Token,
+                    Dashboard.UserKey,
                     regionId,
                     invalidLimit));
 
@@ -251,7 +251,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                 $"✅ Request rejected correctly: {exception.Message}");
 
             var after = await FazzaTopUp.GetRegionFullDataAsync(
-                Dashboard.Token,
+                Dashboard.UserKey,
                 regionId);
 
             Assert.NotNull(after);
@@ -284,7 +284,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                 "RegionId should not be null or empty.");
 
             var before = await FazzaTopUp.GetRegionFullDataAsync(
-                Dashboard.Token,
+                Dashboard.UserKey,
                 regionId);
 
             Assert.NotNull(before);
@@ -357,7 +357,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                 "RegionId should not be null or empty.");
 
             var before = await FazzaTopUp.GetRegionFullDataAsync(
-                Dashboard.Token,
+                Dashboard.UserKey,
                 regionId);
 
             Assert.NotNull(before);
@@ -413,7 +413,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                 "RegionId should not be null or empty.");
 
             var before = await FazzaTopUp.GetRegionFullDataAsync(
-                Dashboard.Token,
+                Dashboard.UserKey,
                 regionId);
 
             Assert.NotNull(before);
@@ -448,7 +448,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                     StringComparison.OrdinalIgnoreCase);
 
                 var after = await FazzaTopUp.GetRegionFullDataAsync(
-                    Dashboard.Token,
+                    Dashboard.UserKey,
                     regionId);
 
                 Assert.NotNull(after);
@@ -522,7 +522,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                 "RegionId should not be null or empty.");
 
             var before = await FazzaTopUp.GetRegionFullDataAsync(
-                Dashboard.Token,
+                Dashboard.UserKey,
                 regionId);
 
             Assert.NotNull(before);
@@ -597,7 +597,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                 "RegionId should not be null or empty.");
 
             var before = await FazzaTopUp.GetRegionFullDataAsync(
-                Dashboard.Token,
+                Dashboard.UserKey,
                 regionId);
 
             Assert.NotNull(before);
@@ -636,7 +636,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                 $"✅ Negative value rejected: {exception.Message}");
 
             var after = await FazzaTopUp.GetRegionFullDataAsync(
-                Dashboard.Token,
+                Dashboard.UserKey,
                 regionId);
 
             Assert.NotNull(after);
@@ -677,7 +677,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                 "RegionId should not be null or empty.");
 
             var before = await FazzaTopUp.GetRegionFullDataAsync(
-                Dashboard.Token,
+                Dashboard.UserKey,
                 regionId);
 
             Assert.NotNull(before);
@@ -721,7 +721,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                 $"{exception.ApiStatusCode}");
 
             var after = await FazzaTopUp.GetRegionFullDataAsync(
-                Dashboard.Token,
+                Dashboard.UserKey,
                 regionId);
 
             Assert.NotNull(after);
@@ -757,7 +757,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
             {
                 lastData =
                     await FazzaTopUp.GetRegionFullDataAsync(
-                        Dashboard.Token,
+                        Dashboard.UserKey,
                         regionId);
 
                 if (lastData != null &&
@@ -789,7 +789,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
 
             var currentData =
                 await FazzaTopUp.GetRegionFullDataAsync(
-                    Dashboard.Token,
+                    Dashboard.UserKey,
                     regionId);
 
             if (currentData == null)
