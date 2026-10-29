@@ -59,7 +59,7 @@ namespace Automation.Framework.Services.Almusher.Client
             string chainId,
             string operationId)
         {
-            var response = await _api.PatchAsync<object, ConfirmCurrencyExchangeResponse>(
+            var response = await _api.PatchAsync<object?, ConfirmCurrencyExchangeResponse>(
                 ConfigurationManager.Settings.ApiSettings.AnisPaymentsUrl,
                 AlmusherEndpoint.ConfirmCurrencyExchange(Guid.Parse(chainId), Guid.Parse(operationId)),
                 null,

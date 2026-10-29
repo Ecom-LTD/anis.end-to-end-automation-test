@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 
 namespace Automation.Framework.Core.Http
 {
@@ -10,12 +10,16 @@ namespace Automation.Framework.Core.Http
     {
         public HttpStatusCode ApiStatusCode { get; }
         public string Body { get; }
+        public string? Method { get; }
+        public string? Url { get; }
 
-        public ApiException(HttpStatusCode status, string body)
-            : base($"HTTP {(int)status}\n{body}")
+        public ApiException(HttpStatusCode status, string body, string? method = null, string? url = null)
+            : base($"{method} {url} -> HTTP {(int)status}\n{body}".TrimStart())
         {
             ApiStatusCode = status;
             Body = body;
+            Method = method;
+            Url = url;
         }
     }
 }

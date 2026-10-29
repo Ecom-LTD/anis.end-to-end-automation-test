@@ -6,6 +6,7 @@ using Xunit.Abstractions;
 
 namespace Automation.Test.Tests.Sulfa
 {
+    [Trait("Category", "Smoke")]
     public class SubscreptionManagement :BaseSulfaTest 
     {
         public SubscreptionManagement(ITestOutputHelper testOutputHelper, SulfaFixture Fixture) : base(testOutputHelper, Fixture)

@@ -14,10 +14,11 @@ public class WalletFlow
     private readonly StateManager _state;
     private readonly RegionFlow _regionFlow;
 
-    public WalletFlow(WalletClient walletClient, StateManager state)
+    public WalletFlow(WalletClient walletClient, StateManager state, RegionFlow regionFlow)
     {
         _walletClient = walletClient;
         _state = state;
+        _regionFlow = regionFlow;
     }
 
     public async Task<(Guid WalletId, Guid SubscriptionId, Guid RegionId)> GetAllIdsAsync(
@@ -70,9 +71,9 @@ public class WalletFlow
                     // ✅ تخزين في State
                     _state.SetValue(StateKeys.Wallet(userKey, currencyType), wallet.WalletId);
                     _state.SetValue(StateKeys.RegionId(userKey, currencyType), wallet.RegionId);
-                    _state.SetValue(StateKeys.SubscriptionId(userKey, subscriptionType), subscription.SubscriptionId);
+                    _state.SetValue(StateKeys.SubscriptionId(userKey, subscriptionType), subscription!.SubscriptionId);
 
-                    return (wallet.WalletId, subscription.SubscriptionId, wallet.RegionId);
+                    return (wallet.WalletId, subscription!.SubscriptionId, wallet.RegionId);
                 }
             }
 
@@ -84,9 +85,9 @@ public class WalletFlow
 
         _state.SetValue(StateKeys.Wallet(userKey, currencyType), wallet.WalletId);
         _state.SetValue(StateKeys.RegionId(userKey, currencyType), wallet.RegionId);
-        _state.SetValue(StateKeys.SubscriptionId(userKey, subscriptionType), subscription.SubscriptionId);
+        _state.SetValue(StateKeys.SubscriptionId(userKey, subscriptionType), subscription!.SubscriptionId);
 
-        return (wallet.WalletId, subscription.SubscriptionId, wallet.RegionId);
+        return (wallet.WalletId, subscription!.SubscriptionId, wallet.RegionId);
     }
 
     public async Task<decimal> GetBalanceAsync(string userKey, Guid walletId)
@@ -169,8 +170,12 @@ public class WalletFlow
                 {
                     result[wallet.CurrencyType] = wallet.WalletId;
 
-                    // ✅ تخزين كل محفظة في State
-                    _state.SetValue(StateKeys.Wallet(userKey, wallet.CurrencyType), wallet.WalletId);
+                    // لا نستبدل قيمة موجودة: مفتاح State لا يميّز الاشتراك، والقيمة المخزّنة عند بناء
+                    // الجلسة (GetAllIdsAsync) مفلترة على الاشتراك الصحيح. الاستبدال هنا كان يضع محفظة
+                    // اشتراك آخر مكان محفظة Business ويُفشل اختبارات المشير اللاحقة.
+                    var key = StateKeys.Wallet(userKey, wallet.CurrencyType);
+                    if (!_state.TryGetValue<Guid>(key, out _))
+                        _state.SetValue(key, wallet.WalletId);
                 }
             }
         }

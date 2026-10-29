@@ -21,7 +21,7 @@ namespace Automation.Test.Almusher
 
         protected BaseAlmusherTest(ITestOutputHelper output, AlmuhserFixture fixture)
         {
-            Output = output;
+            Output = Automation.Test.Infrastructure.Reporting.ReportOutput.Wrap(output);
             Fixture = fixture;
         }
 
@@ -97,11 +97,7 @@ namespace Automation.Test.Almusher
 
         protected void PrintResult(string testName, bool success, string? message = null)
         {
-            var sep = new string('=', 50);
-            Output.WriteLine($"\n{sep}");
-            Output.WriteLine($"🧪 {testName}: {(success ? "✅ PASSED" : "❌ FAILED")}");
-            if (!string.IsNullOrEmpty(message)) Output.WriteLine($"📝 {message}");
-            Output.WriteLine(sep);
+            Automation.Test.Infrastructure.Reporting.TestOutputExtensions.Result(Output, success, $"{testName}: {message}");
         }
     }
 }

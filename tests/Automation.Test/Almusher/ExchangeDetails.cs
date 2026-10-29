@@ -8,6 +8,7 @@ using Xunit.Abstractions;
 namespace Automation.Test.Tests.Almusher
     {
 
+        [Trait("Category", "Smoke")]
         public class ExchangeDetailsDisplayTests : BaseAlmusherTest
         {
             public ExchangeDetailsDisplayTests(ITestOutputHelper output, AlmuhserFixture fixture)

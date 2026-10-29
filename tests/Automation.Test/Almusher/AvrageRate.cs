@@ -7,6 +7,7 @@ using Xunit.Abstractions;
 namespace Automation.Test.Tests.Almusher
 {
     
+    [Trait("Category", "Smoke")]
     public class AverageRateDisplayTests : BaseAlmusherTest
     {
         public AverageRateDisplayTests(ITestOutputHelper output, AlmuhserFixture fixture)

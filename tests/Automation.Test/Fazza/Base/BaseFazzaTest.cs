@@ -7,6 +7,7 @@ using Automation.Framework.Services.Transfer.Flow;
 using Automation.Framework.Services.Wallet.Flow;
 using Automation.Framework.Shared;
 using Automation.Test.Fixtures.Fazza;
+using Automation.Framework.Services.ForeignTransfer.Flow;
 using Automation.Test.Infrastructure;
 using Xunit;
 using Xunit.Abstractions;
@@ -21,7 +22,7 @@ namespace Automation.Test.Tests.Fazza.Base
 
         protected BaseFazzaTest(ITestOutputHelper output, FazzaFixture fixture)
         {
-            Output = output;
+            Output = Automation.Test.Infrastructure.Reporting.ReportOutput.Wrap(output);
             Fixture = fixture;
           //  Fixture.Log = msg => Output.WriteLine(msg);
             //         Fixture.Output = output;
@@ -43,6 +44,9 @@ namespace Automation.Test.Tests.Fazza.Base
         public AccountReadinessFlow AccountReadiness => Fixture.Flow<AccountReadinessFlow>();
         public FazzaLimitReadinessFlow FazzaLimitReadiness => Fixture.Flow<FazzaLimitReadinessFlow>();
 
+        public ForeignTransferFlow ForeignTransfer => Fixture.Flow<ForeignTransferFlow>();
+
+
         // Helper للـ Retry
         public Task<T> ExecuteWithRetryAsync<T>(TestSession session, Func<Task<T>> action)
             => Fixture.Resilience.ExecuteAsync(session, action);
@@ -50,12 +54,7 @@ namespace Automation.Test.Tests.Fazza.Base
         // Helper للطباعة
         protected void PrintResult(string testName, bool success, string? message = null)
         {
-            var separator = new string('=', 60);
-            Output.WriteLine($"\n{separator}");
-            Output.WriteLine($"🧪 {testName}: {(success ? "✅ PASSED" : "❌ FAILED")}");
-            if (!string.IsNullOrWhiteSpace(message))
-                Output.WriteLine($"📝 {message}");
-            Output.WriteLine(separator);
+            Automation.Test.Infrastructure.Reporting.TestOutputExtensions.Result(Output, success, $"{testName}: {message}");
         }
     }
 }

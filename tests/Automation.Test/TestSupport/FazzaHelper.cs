@@ -1,8 +1,11 @@
 ﻿using Automation.Framework.Helpers;
+using Automation.Framework.Helpers.Almusher;
 using Automation.Framework.Services.AccountReadiness.Models;
 using Automation.Framework.Services.FazzaTopup.Models;
 using Automation.Framework.Shared;
 using Automation.Framework.Testing;
+using Automation.Test.Infrastructure.Reporting;
+using Automation.Test.Support;
 using Automation.Test.Tests.Fazza.Base;
 using Xunit;
 
@@ -20,30 +23,14 @@ namespace Automation.Test.TestSupport
         public static async Task<SulfaAccount> GetSulfaAccountAsync(
             this BaseFazzaTest test, TestSession session)
         {
-            var accounts = await test.ExecuteWithRetryAsync(
+            var matched = await test.ExecuteWithRetryAsync(
                 test.Dashboard,
-                () => test.FazzaTopUp.GetSulfaAccountsAsync(
-                    test.Dashboard.UserKey, session.PhoneNumber));
+                () => test.FazzaTopUp.FindAccountAsync(
+                    test.Dashboard.UserKey, session.PhoneNumber, session.AccountId));
 
-            Assert.NotNull(accounts);
-            Assert.NotEmpty(accounts);
-
-            var matched = session.AccountIdGuid != Guid.Empty
-                ? accounts.FirstOrDefault(a =>
-                    AccountMatcher.IdsMatch(a.Id, session.AccountId))
-                : null;
-
-            matched ??= accounts.FirstOrDefault(a =>
-                PhoneNormalizer.AreEqual(a.Phone, session.PhoneNumber));
-
-            if (matched is null)
-            {
-                throw new InvalidOperationException(
-                    $"Sulfa account not found for '{session.PhoneNumber}' " +
-                    $"(AccountId: '{session.AccountId}').");
-            }
-
-            return matched;
+            return matched ?? throw new InvalidOperationException(
+                $"Sulfa account not found for '{session.PhoneNumber}' " +
+                $"(AccountId: '{session.AccountId}').");
         }
 
         /// <summary>
@@ -120,7 +107,7 @@ namespace Automation.Test.TestSupport
                 });
 
             Assert.True(
-                result.TotalDueAfterSettlement <= 0.0001m,
+                DecimalComparer.AreClose(0m, result.TotalDueAfterSettlement),
                 $"Account '{debtorSession.PhoneNumber}' is not debt-free.");
         }
 
@@ -136,6 +123,9 @@ namespace Automation.Test.TestSupport
             string regionId,
             decimal requiredLimit)
         {
+            // قفل المنطقة يمنع تسابق قراءة-ثم-تعديل بين اختبارات متوازية على نفس المنطقة.
+            using var regionLock = await RegionLock.AcquireAsync(regionId);
+
             var region = await test.GetRegionAsync(regionId);
 
             // المتاح = سقف المنطقة - إجمالي المخصص
@@ -154,19 +144,28 @@ namespace Automation.Test.TestSupport
                 return;
             }
 
-            // حساب السقف الجديد:
-            // نضيف الفرق بين المطلوب والمتاح إلى السقف الحالي.
-            var newLimit = region.FazaaMaxLimit + requiredLimit ;
+            // السقف الجديد = السقف الحالي + العجز فقط (المطلوب - المتاح).
+            var shortage = requiredLimit - available;
+            var newLimit = region.FazaaMaxLimit + shortage;
 
             test.Output.WriteLine($"❌ النتيجة: المتاح في المنطقة غير كافٍ.");
-            test.Output.WriteLine($"   ├─ العجز المطلوب:              {requiredLimit:N2}");
+            test.Output.WriteLine($"   ├─ العجز المطلوب:              {shortage:N2}");
             test.Output.WriteLine($"   └─ سقف المنطقة الجديد المطلوب:  {newLimit:N2}");
 
-            // تنفيذ الرفع (باستخدام Dashboard.Token)
-            await test.FazzaTopUp.SetRegionMaxFazaaLimitAsync(
-                test.Dashboard.Token,
-                regionId,
-                newLimit);
+            var response = await test.ExecuteWithRetryAsync(
+                test.Dashboard,
+                () => test.FazzaTopUp.SetRegionMaxFazaaLimitAsync(
+                    test.Dashboard.UserKey,
+                    regionId,
+                    newLimit));
+
+            Assert.True(response is { Success: true },
+                $"Failed to raise region '{regionId}' limit: {response?.Message}");
+
+            await PollingHelper.UntilAsync(
+                () => test.GetRegionAsync(regionId),
+                r => r.FazaaMaxLimit >= newLimit,
+                $"region {regionId} FazaaMaxLimit to reach {newLimit}");
 
             test.Output.WriteLine($"✅ تم رفع سقف المنطقة بنجاح.");
         }
@@ -203,7 +202,8 @@ namespace Automation.Test.TestSupport
             // 3. إذا لم يكن كافياً، نحتاج لرفعه
             test.Output.WriteLine($"⚠️ السقف الحالي ({currentLimit}) أقل من المطلوب ({requiredLimit}). جاري الرفع...");
 
-            await test.EnsureRegionCapacityAsync(accountSession.RegionId, requiredLimit);
+            // المنطقة تحتاج استيعاب الزيادة فقط (المطلوب - الحالي) لأن السقف الحالي محسوب أصلًا ضمن المخصص.
+            await test.EnsureRegionCapacityAsync(accountSession.RegionId, requiredLimit - currentLimit);
 
             // 5. رفع سقف الحساب إلى القيمة المطلوبة
             var response = await test.ExecuteWithRetryAsync(
@@ -244,7 +244,7 @@ namespace Automation.Test.TestSupport
         {
             return await PollingHelper.UntilAsync(
                 async () => await test.TakeSnapshotAsync(session),
-                snapshot => Math.Abs(snapshot.WalletBalance - expectedBalance) < 0.001m,
+                snapshot => DecimalComparer.AreClose(expectedBalance, snapshot.WalletBalance, 0.001m),
                 $"{session.UserKey} balance return to {expectedBalance:F3}");
         }
 
@@ -258,14 +258,18 @@ namespace Automation.Test.TestSupport
         public static async Task<FazzaSnapshot> TakeSnapshotAsync(
             this BaseFazzaTest test, TestSession session)
         {
-            var balance = await test.Wallet.GetBalanceAsync(
-                session.UserKey, session.WalletIdGuid);
-            var account = await test.GetSulfaAccountAsync(session);
+            // القراءتان مستقلتان؛ نشغّلهما بالتوازي ونحمي الرصيد بإعادة المحاولة عند 401.
+            var balanceTask = test.ExecuteWithRetryAsync(
+                session,
+                () => test.Wallet.GetBalanceAsync(session.UserKey, session.WalletIdGuid));
+            var accountTask = test.GetSulfaAccountAsync(session);
+
+            await Task.WhenAll(balanceTask, accountTask);
 
             return new FazzaSnapshot
             {
-                WalletBalance = balance,
-                Account = account
+                WalletBalance = balanceTask.Result,
+                Account = accountTask.Result
             };
         }
 
@@ -279,19 +283,9 @@ namespace Automation.Test.TestSupport
             decimal expectedDelta,
             string label)
         {
-            var actualDelta = after - before;
-            var isEqual = Math.Abs(actualDelta - expectedDelta) < 0.0001m;
-
-            if (!isEqual)
-            {
-                throw new Xunit.Sdk.XunitException(
-                    $"❌ {label}: Expected Delta={expectedDelta}, " +
-                    $"Actual Delta={actualDelta} (Before={before}, After={after})");
-            }
-
-            test.Output.WriteLine($"✅ {label}: Delta = {actualDelta} (Correct)");
+            test.Output.WriteLine($"   {label}: قبل = {before} | بعد = {after}");
+            test.Output.Verify($"فرق {label}", expectedDelta, after - before, 0.0001m);
         }
-
 
         /// <summary>
         /// التحقق من أن القيمة الفعلية تساوي القيمة المتوقعة (مطابقة تامة).
@@ -302,21 +296,16 @@ namespace Automation.Test.TestSupport
             decimal expected,
             decimal actual,
             string label)
-        {
-            // التحقق التام (يسمح بجزء صغير جداً للـ decimal rounding)
-            var isEqual = Math.Abs(expected - actual) < 0.0001m;
+            => test.Output.Verify(label, expected, actual, 0.0001m);
 
-            if (!isEqual)
+        /// <summary>يطبع لقطة الحساب بصيغة موحّدة (للاستخدام داخل Before/After).</summary>
+        public static (string, object?)[] Describe(this FazzaSnapshot s, string prefix)
+            => new (string, object?)[]
             {
-                throw new Xunit.Sdk.XunitException(
-                    $"❌ {label}:\n" +
-                    $"   Expected: {expected}\n" +
-                    $"   Actual:   {actual}");
-            }
-
-            test.Output.WriteLine($"✅ {label}: Value = {actual} (Correct)");
-        }
-
+                ($"{prefix} الرصيد", s.WalletBalance),
+                ($"{prefix} سقف الحساب (MaxFazaaDebtLimit)", s.Account.MaxFazaaDebtLimit),
+                ($"{prefix} الدين المؤكد (ConfirmedDebt)", s.Account.ConfirmedDebt)
+            };
         /// <summary>
         /// استعادة السقف الأصلي بأمان (دالة Cleanup).
         /// </summary>

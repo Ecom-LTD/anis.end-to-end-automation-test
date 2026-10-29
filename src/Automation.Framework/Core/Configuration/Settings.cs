@@ -10,11 +10,13 @@ namespace Automation.Framework.Configuration
     {
         public string GatewayUrl { get; set; } = string.Empty;
         public string IdentityUrl { get; set; } = string.Empty;
+        public string DragonsUrl { get; set; } = string.Empty;
         public string FinOpsManagementUrl { get; set; } = string.Empty;
         public string FinOpsConsumersUrl { get; set; } = string.Empty;
         public string FalconsUrl { get; set; } = string.Empty;
         public string AnisPaymentsUrl { get; set; } = string.Empty;
 
+        public string AnisCardUrl { get; set; } = string.Empty;
         /// <summary>عند true تُستخدم طبقة API وهمية بدل الشبكة (للتشغيل دون خادم حقيقي).</summary>
         public bool UseFakeBackend { get; set; } = false;
     }

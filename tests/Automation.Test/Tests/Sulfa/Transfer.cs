@@ -11,6 +11,7 @@ using Xunit.Abstractions;
 
 namespace Automation.Test.Tests.Sulfa
 {
+    [Trait("Category", "Regression")]
     public class Transfer : BaseSulfaTest
     {
 
@@ -51,7 +52,6 @@ namespace Automation.Test.Tests.Sulfa
             Output.WriteLine($"📋 معرف المحفظة: {walletId}");
             var balance = await Wallet.GetBalanceAsync(userKey, walletId);
             Output.WriteLine($"💰 الرصيد الحالي: {balance}");
-            Assert.NotNull(balance);
             PrintResult(nameof(GetWalletBalance_ShouldSucceed), true);
         }
 

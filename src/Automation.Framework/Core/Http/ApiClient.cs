@@ -68,15 +68,18 @@ namespace Automation.Framework.Core.Http
 
         private async Task<ApiResponse<T>> ExecuteAsync<T>(HttpRequestMessage request)
         {
+            using var _ = request;
             using var response = await _http.SendAsync(request);
             var body = await response.Content.ReadAsStringAsync();
 
             if (!response.IsSuccessStatusCode)
-                throw new ApiException(response.StatusCode, body);
+                throw new ApiException(response.StatusCode, body, request.Method.Method, request.RequestUri?.ToString());
 
-            var data = string.IsNullOrWhiteSpace(body)
-                ? default!
-                : JsonSerializer.Deserialize<T>(body, JsonOptions)!;
+            var data = typeof(T) == typeof(string)
+                ? (T)(object)body
+                : string.IsNullOrWhiteSpace(body)
+                    ? default!
+                    : JsonSerializer.Deserialize<T>(body, JsonOptions)!;
 
             return new ApiResponse<T>
             {
@@ -121,52 +124,10 @@ namespace Automation.Framework.Core.Http
         }
 
 
-        public async Task<ApiResponse<string>>
-    PostWithHeadersForStringAsync<TRequest>(
-        string baseUrl,
-        string path,
-        TRequest body,
-        string? token = null,
-        Dictionary<string, string>? customHeaders = null)
-        {
-            var request =
-                CreateRequest(
-                    HttpMethod.Post,
-                    baseUrl + path,
-                    token);
-
-            if (customHeaders != null)
-            {
-                foreach (var header in customHeaders)
-                {
-                    request.Headers.TryAddWithoutValidation(
-                        header.Key,
-                        header.Value);
-                }
-            }
-
-            request.Content =
-                CreateJsonContent(body);
-
-            using var response =
-                await _http.SendAsync(request);
-
-            var responseBody =
-                await response.Content.ReadAsStringAsync();
-
-            if (!response.IsSuccessStatusCode)
-            {
-                throw new ApiException(
-                    response.StatusCode,
-                    responseBody);
-            }
-
-            return new ApiResponse<string>
-            {
-                Data = responseBody,
-                StatusCode = response.StatusCode,
-                RawBody = responseBody
-            };
-        }
+        /// <summary>يعيد الاستجابة كنص خام (للـ endpoints التي لا ترجع JSON).</summary>
+        public Task<ApiResponse<string>> PostWithHeadersForStringAsync<TRequest>(
+            string baseUrl, string path, TRequest body, string? token = null,
+            Dictionary<string, string>? customHeaders = null)
+            => PostWithHeadersAsync<TRequest, string>(baseUrl, path, body, token, customHeaders);
     }
 }

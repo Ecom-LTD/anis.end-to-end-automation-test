@@ -1,4 +1,4 @@
-﻿using System.Text;
+﻿using Automation.Framework.Helpers;
 using Automation.Framework.Core.Session;
 using Automation.Framework.Services.FazzaTopup.Models;
 using Automation.Framework.Shared;
@@ -222,50 +222,19 @@ public sealed class FazzaLimitReadinessFlow
         TestSession dashboardSession,
         TestSession accountSession)
     {
-        var accounts = await _resilience.ExecuteAsync(
+        var matchedAccount = await _resilience.ExecuteAsync(
             dashboardSession,
-            () => _fazzaTopUp.GetSulfaAccountsAsync(
+            () => _fazzaTopUp.FindAccountAsync(
                 dashboardSession.UserKey,
-                accountSession.PhoneNumber));
-
-        if (accounts is null || accounts.Count == 0)
-        {
-            throw new InvalidOperationException(
-                $"No Sulfa account was returned for phone " +
-                $"'{accountSession.PhoneNumber}'.");
-        }
-
-        /*
-         * المطابقة الأقوى تكون باستخدام AccountId.
-         */
-        var matchedAccount = accounts.FirstOrDefault(
-            account => IsAccountIdMatch(
-                account,
-                accountSession));
-
-        /*
-         * الهاتف يستخدم كخيار احتياطي إذا لم تنجح
-         * المطابقة باستخدام AccountId.
-         */
-        matchedAccount ??= accounts.FirstOrDefault(
-            account => IsPhoneNumberMatch(
-                account,
-                accountSession));
+                accountSession.PhoneNumber,
+                accountSession.AccountId));
 
         if (matchedAccount is null)
         {
-            var returnedAccounts = string.Join(
-                ", ",
-                accounts.Select(
-                    account => $"{account.Phone}/{account.Id}"));
-
             throw new InvalidOperationException(
-                $"Sulfa accounts were returned, but none matched " +
-                $"account '{accountSession.PhoneNumber}' with " +
-                $"AccountId '{accountSession.AccountId}'. " +
-                $"Returned accounts: {returnedAccounts}.");
+                $"No Sulfa account matched '{accountSession.PhoneNumber}' " +
+                $"with AccountId '{accountSession.AccountId}'.");
         }
-
         ValidateAccountValues(
             matchedAccount,
             accountSession);
@@ -387,7 +356,7 @@ public sealed class FazzaLimitReadinessFlow
         var region = await _resilience.ExecuteAsync(
             dashboardSession,
             () => _fazzaTopUp.GetRegionFullDataAsync(
-                dashboardSession.Token,
+                dashboardSession.UserKey,
                 regionId));
 
         if (region is null)
@@ -400,7 +369,7 @@ public sealed class FazzaLimitReadinessFlow
          * هذه الحماية مهمة لأن GetRegionFullDataAsync في المشروع
          * يأخذ أول عنصر من القائمة التي يعيدها الـAPI.
          */
-        if (!AreSameIdentifiers(region.Id, regionId))
+        if (!AccountMatcher.IdsMatch(region.Id, regionId))
         {
             throw new InvalidOperationException(
                 $"The region API returned RegionId '{region.Id}' " +
@@ -444,7 +413,7 @@ public sealed class FazzaLimitReadinessFlow
         var response = await _resilience.ExecuteAsync(
             dashboardSession,
             () => _fazzaTopUp.SetRegionMaxFazaaLimitAsync(
-                dashboardSession.Token,
+                dashboardSession.UserKey,
                 regionId,
                 newMaximumLimit));
 
@@ -507,10 +476,7 @@ public sealed class FazzaLimitReadinessFlow
                 accountSession.AccountIdGuid,
                 newMaximumLimit));
 
-        /*
-         * الدالة الحالية ترجع string، وقد ترجع رسالة فشل
-         * بدل أن ترمي Exception.
-         */
+        // الفشل الحقيقي يظهر كـ ApiException من ApiClient؛ هنا نكتفي برفض الاستجابة الفارغة.
         if (string.IsNullOrWhiteSpace(response))
         {
             throw new InvalidOperationException(
@@ -518,45 +484,9 @@ public sealed class FazzaLimitReadinessFlow
                 $"'{accountSession.PhoneNumber}' returned an empty response.");
         }
 
-        if (IsFailureResponse(response))
-        {
-            throw new InvalidOperationException(
-                $"Failed to update Fazza limit for account " +
-                $"'{accountSession.PhoneNumber}'. " +
-                $"Requested limit: {newMaximumLimit}. " +
-                $"Response: {response}");
-        }
-
         log?.Invoke(
             $"[FazzaLimitReadiness] Account update response: " +
             $"{response}.");
-    }
-
-    private static bool IsFailureResponse(
-    string response)
-    {
-        if (string.IsNullOrWhiteSpace(response))
-            return true;
-
-        var failureIndicators = new[]
-        {
-        "failed",
-        "failure",
-        "error",
-        "invalid",
-        "not found",
-        "unauthorized",
-        "forbidden",
-        "conflict",
-        "غير ناجح",
-        "فشل",
-        "خطأ"
-    };
-
-        return failureIndicators.Any(indicator =>
-            response.Contains(
-                indicator,
-                StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>
@@ -709,12 +639,12 @@ public sealed class FazzaLimitReadinessFlow
         ArgumentNullException.ThrowIfNull(operatorSession);
         ArgumentNullException.ThrowIfNull(businessSession);
 
-        ValidateRequiredValue(
+        Guard.RequiredValue(
             dashboardSession.UserKey,
             nameof(dashboardSession.UserKey),
             "dashboard session");
 
-        ValidateRequiredValue(
+        Guard.RequiredValue(
             dashboardSession.Token,
             nameof(dashboardSession.Token),
             "dashboard session");
@@ -736,27 +666,27 @@ public sealed class FazzaLimitReadinessFlow
         TestSession session,
         string sessionName)
     {
-        ValidateRequiredValue(
+        Guard.RequiredValue(
             session.PhoneNumber,
             nameof(session.PhoneNumber),
             sessionName);
 
-        ValidateRequiredValue(
+        Guard.RequiredValue(
             session.AccountId,
             nameof(session.AccountId),
             sessionName);
 
-        ValidateRequiredGuid(
+        Guard.RequiredGuid(
             session.AccountId,
             nameof(session.AccountId),
             sessionName);
 
-        ValidateRequiredValue(
+        Guard.RequiredValue(
             session.RegionId,
             nameof(session.RegionId),
             sessionName);
 
-        ValidateRequiredGuid(
+        Guard.RequiredGuid(
             session.RegionId,
             nameof(session.RegionId),
             sessionName);
@@ -794,111 +724,6 @@ public sealed class FazzaLimitReadinessFlow
          */
     }
 
-    private static void ValidateRequiredValue(
-        string? value,
-        string propertyName,
-        string sessionName)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            throw new InvalidOperationException(
-                $"{propertyName} is missing from {sessionName}.");
-        }
-    }
-
-    private static void ValidateRequiredGuid(
-        string value,
-        string propertyName,
-        string sessionName)
-    {
-        if (!Guid.TryParse(value, out var parsedValue) ||
-            parsedValue == Guid.Empty)
-        {
-            throw new InvalidOperationException(
-                $"{propertyName} in {sessionName} is not a valid Guid. " +
-                $"Current value: '{value}'.");
-        }
-    }
-
-    /// <summary>
-    /// مطابقة الحساب باستخدام AccountId.
-    /// </summary>
-    private static bool IsAccountIdMatch(
-        SulfaAccount account,
-        TestSession accountSession)
-    {
-        if (string.IsNullOrWhiteSpace(account.Id) ||
-            string.IsNullOrWhiteSpace(accountSession.AccountId))
-        {
-            return false;
-        }
-
-        return AreSameIdentifiers(
-            account.Id,
-            accountSession.AccountId);
-    }
-
-    /// <summary>
-    /// مطابقة الحساب باستخدام رقم الهاتف كخيار احتياطي.
-    /// </summary>
-    private static bool IsPhoneNumberMatch(
-        SulfaAccount account,
-        TestSession accountSession)
-    {
-        var accountPhone =
-            NormalizePhoneNumber(account.Phone);
-
-        var sessionPhone =
-            NormalizePhoneNumber(accountSession.PhoneNumber);
-
-        return !string.IsNullOrWhiteSpace(accountPhone) &&
-               accountPhone == sessionPhone;
-    }
-
-    /// <summary>
-    /// مقارنة معرفين سواء كانا Guid أو نصًا.
-    /// </summary>
-    private static bool AreSameIdentifiers(
-        string? first,
-        string? second)
-    {
-        if (string.IsNullOrWhiteSpace(first) ||
-            string.IsNullOrWhiteSpace(second))
-        {
-            return false;
-        }
-
-        if (Guid.TryParse(first, out var firstGuid) &&
-            Guid.TryParse(second, out var secondGuid))
-        {
-            return firstGuid == secondGuid;
-        }
-
-        return string.Equals(
-            first.Trim(),
-            second.Trim(),
-            StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>
-    /// توحيد رقم الهاتف بإزالة جميع الرموز وإبقاء الأرقام فقط.
-    /// </summary>
-    private static string NormalizePhoneNumber(
-        string? phoneNumber)
-    {
-        if (string.IsNullOrWhiteSpace(phoneNumber))
-            return string.Empty;
-
-        var result = new StringBuilder();
-
-        foreach (var character in phoneNumber)
-        {
-            if (char.IsDigit(character))
-                result.Append(character);
-        }
-
-        return result.ToString();
-    }
 
     /// <summary>
     /// نتيجة داخلية لتجهيز حساب واحد.

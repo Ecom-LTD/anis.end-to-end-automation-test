@@ -28,6 +28,8 @@ using Automation.Framework.Services.AccountReadiness.Flow;
 using Automation.Framework.Services.Almusher.Client;
 using Automation.Framework.Services.Almusher.Flow;
 using Automation.Framework.Testing;
+using Automation.Framework.Services.ForeignTransfer.Client;
+using Automation.Framework.Services.ForeignTransfer.Flow;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Automation.Framework.Composition
@@ -96,6 +98,10 @@ namespace Automation.Framework.Composition
 
             services.AddSingleton<AccountReadinessFlow>();
             services.AddSingleton<FazzaLimitReadinessFlow>();
+
+            // Foreign Transfer Service
+            services.AddSingleton<ForeignTransferClient>();
+            services.AddSingleton<ForeignTransferFlow>();
 
             return services;
         }

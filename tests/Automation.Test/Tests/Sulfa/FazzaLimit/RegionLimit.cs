@@ -7,6 +7,8 @@ using Xunit.Abstractions;
 
 namespace Automation.Test.Tests.Sulfa.FazzaLimit
 {
+    [Trait("Category", "Regression")]
+    [Trait("Category", "Slow")]
     public class RegionLimit : BaseSulfaTest
     {
         public RegionLimit(ITestOutputHelper output, SulfaFixture fixture): base(output, fixture) {}
@@ -45,7 +47,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
             {
                 var exception = await Record.ExceptionAsync(() =>
                     FazzaTopUp.SetRegionMaxFazaaLimitAsync(
-                        Dashboard.Token,
+                        Dashboard.UserKey,
                         regionId,
                         newLimit));
 
@@ -120,7 +122,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                     var prepareException =
                         await Record.ExceptionAsync(() =>
                             FazzaTopUp.SetRegionMaxFazaaLimitAsync(
-                                Dashboard.Token,
+                                Dashboard.UserKey,
                                 regionId,
                                 workingCurrentLimit));
 
@@ -157,7 +159,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
 
                 var exception = await Record.ExceptionAsync(() =>
                     FazzaTopUp.SetRegionMaxFazaaLimitAsync(
-                        Dashboard.Token,
+                        Dashboard.UserKey,
                         regionId,
                         newLimit));
 
@@ -310,7 +312,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
             {
                 var exception = await Record.ExceptionAsync(() =>
                     FazzaTopUp.SetRegionMaxFazaaLimitAsync(
-                        Dashboard.Token,
+                        Dashboard.UserKey,
                         regionId,
                         newLimit));
 
@@ -375,7 +377,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
 
             var exception = await Record.ExceptionAsync(() =>
                 FazzaTopUp.SetRegionMaxFazaaLimitAsync(
-                    Dashboard.Token,
+                    Dashboard.UserKey,
                     regionId,
                     currentLimit));
 
@@ -434,7 +436,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                 var exception =
                     await Assert.ThrowsAsync<ApiException>(() =>
                         FazzaTopUp.SetRegionMaxFazaaLimitAsync(
-                            Dashboard.Token,
+                            Dashboard.UserKey,
                             regionId,
                             0m));
 
@@ -475,7 +477,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
                 {
                     var exception = await Record.ExceptionAsync(() =>
                         FazzaTopUp.SetRegionMaxFazaaLimitAsync(
-                            Dashboard.Token,
+                            Dashboard.UserKey,
                             regionId,
                             0m));
 
@@ -544,7 +546,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
             {
                 var exception = await Record.ExceptionAsync(() =>
                     FazzaTopUp.SetRegionMaxFazaaLimitAsync(
-                        Dashboard.Token,
+                        Dashboard.UserKey,
                         regionId,
                         newLimit));
 
@@ -614,7 +616,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
             var exception =
                 await Assert.ThrowsAsync<ApiException>(() =>
                     FazzaTopUp.SetRegionMaxFazaaLimitAsync(
-                        Dashboard.Token,
+                        Dashboard.UserKey,
                         regionId,
                         invalidLimit));
 
@@ -697,7 +699,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
             var exception =
                 await Assert.ThrowsAsync<ApiException>(() =>
                     FazzaTopUp.SetRegionMaxFazaaLimitAsync(
-                        SulfaBusiness.Token,
+                        SulfaBusiness.UserKey,
                         regionId,
                         newLimit));
 
@@ -862,7 +864,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
             var restoreException =
                 await Record.ExceptionAsync(() =>
                     FazzaTopUp.SetRegionMaxFazaaLimitAsync(
-                        Dashboard.Token,
+                        Dashboard.UserKey,
                         regionId,
                         originalLimit));
 

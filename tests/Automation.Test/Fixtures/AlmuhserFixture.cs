@@ -3,10 +3,6 @@ using Automation.Test.Sessions;
 using Automation.Test.Fixtures;
 using Xunit;
 
-using Automation.Framework.Shared;
-using Automation.Test.Sessions;
-using Automation.Test.Fixtures;
-using Xunit;
 
 namespace Automation.Test.Fixtures
 {

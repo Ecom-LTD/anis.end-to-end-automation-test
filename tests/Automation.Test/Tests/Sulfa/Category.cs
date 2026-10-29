@@ -12,6 +12,7 @@ using Xunit.Abstractions;
 
 namespace Automation.Test.Tests.Sulfa
 {
+    [Trait("Category", "Smoke")]
     public class Category : BaseSulfaTest
     {
 

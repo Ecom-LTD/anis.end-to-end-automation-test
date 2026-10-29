@@ -88,7 +88,7 @@ namespace Automation.Framework.Services.Almusher.Flow
         /// ✅ إضافة عمولة (Commission) إلى الطلب - نسخة مبسطة
         /// </summary>
         public ExchangeRequestBuilder WithCommission(
-            string walletId,
+            string? walletId,
             decimal amount,
             string description = "Commission",
             bool isIncluded = true)

@@ -10,6 +10,7 @@ using Xunit.Abstractions;
 namespace Automation.Test.Tests.CrossService
 {
     /// <summary>سيناريو متعدّد الخدمات: رصيد (Wallet) ← تحويل (Transfer) ← تحقق من التطابق.</summary>
+    [Trait("Category", "Regression")]
     public class TransferConsistencyScenario : BaseSulfaTest
     {
         public TransferConsistencyScenario(ITestOutputHelper output, SulfaFixture fixture)

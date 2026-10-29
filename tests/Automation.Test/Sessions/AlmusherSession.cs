@@ -87,7 +87,7 @@ namespace Automation.Test.Sessions
         public static SessionOptions Dashboard => Build(
             TestUsers.Dashboard,
             SubscriptionType.Operator,
-            true,        // LoadAccount = true (مطلوب لجلب AccountId)
+            false,       // LoadAccount = false (Dashboard لا يحتاج AccountId)
             false,       // LoadWallet = false (لا يحتوي على محفظة)
             CurrencyType.LYD);
 

@@ -66,7 +66,7 @@
     /// </summary>
     public class CommissionInfo
     {
-        public string WalletId { get; set; } = string.Empty;
+        public string? WalletId { get; set; } = string.Empty;
 
         public List<CommissionElement> CommissionElements { get; set; } = new();
     }

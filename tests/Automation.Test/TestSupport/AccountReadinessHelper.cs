@@ -37,17 +37,8 @@ namespace Automation.Test.TestSupport
                     $"Response: {forward.Message}");
             }
 
-            log?.Invoke(
-                $"✅ التحويل التجريبي نجح. " +
-                $"في انتظار النظام ليُظهر الحساب في التقارير...");
-
-            // 2. انتظار قصير ليظهر الحساب في Cashflow
-            await PollingHelper.UntilAsync(
-                () => Task.FromResult(true),
-                _ => true,
-                "activation flush",
-                maxAttempts: 4,
-                initialIntervalMs: 500);
+            // ظهور الحساب في Cashflow تتحقق منه AccountReadinessFlow بإعادة القراءة بعد هذا الـ callback.
+            log?.Invoke("✅ التحويل التجريبي نجح.");
 
             // 3. إعادة المبلغ (المدين → الدافع) لإلغاء الأثر
             log?.Invoke(

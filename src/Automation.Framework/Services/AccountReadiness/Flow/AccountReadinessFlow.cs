@@ -95,21 +95,17 @@ public sealed class AccountReadinessFlow
 
         if (options.SettleDueDebt && totalDueBefore > options.DebtTolerance)
         {
+
             await SettleDebtAsync(payerSession, debtorSession, payerBalance, totalDueBefore, log);
 
             transferredAmount = totalDueBefore;
 
-            totalDueAfter = await WaitForDebtSettlementAsync(
+            // آخر تقرير تمت قراءته داخل حلقة التحقق هو التقرير النهائي؛
+            // لا حاجة لاستدعاء Cashflow إضافي بعد الانتظار.
+            (totalDueAfter, debtReport) = await WaitForDebtSettlementAsync(
                 reportSession,
                 debtorSession,
                 options,
-                log);
-
-            // ✅ الاستدعاء الثاني (نمرر null لأنه لا يحتاج تفعيل بعد السداد)
-            debtReport = await GetDebtReportAsync(
-                reportSession,
-                debtorSession,
-                null,
                 log);
         }
 
@@ -173,47 +169,47 @@ public sealed class AccountReadinessFlow
         ArgumentNullException.ThrowIfNull(payerSession);
         ArgumentNullException.ThrowIfNull(debtorSession);
 
-        ValidateRequiredValue(
+        Guard.RequiredValue(
             reportSession.UserKey,
             nameof(reportSession.UserKey),
             "report session");
 
-        ValidateRequiredValue(
+        Guard.RequiredValue(
             payerSession.UserKey,
             nameof(payerSession.UserKey),
             "payer session");
 
-        ValidateRequiredValue(
+        Guard.RequiredValue(
             payerSession.WalletId,
             nameof(payerSession.WalletId),
             "payer session");
 
-        ValidateGuid(
+        Guard.RequiredGuid(
             payerSession.WalletId,
             nameof(payerSession.WalletId),
             "payer session");
 
-        ValidateRequiredValue(
+        Guard.RequiredValue(
             debtorSession.PhoneNumber,
             nameof(debtorSession.PhoneNumber),
             "debtor session");
 
-        ValidateRequiredValue(
+        Guard.RequiredValue(
             debtorSession.SubscriptionId,
             nameof(debtorSession.SubscriptionId),
             "debtor session");
 
-        ValidateGuid(
+        Guard.RequiredGuid(
             debtorSession.SubscriptionId,
             nameof(debtorSession.SubscriptionId),
             "debtor session");
 
-        ValidateRequiredValue(
+        Guard.RequiredValue(
             debtorSession.RegionId,
             nameof(debtorSession.RegionId),
             "debtor session");
 
-        ValidateGuid(
+        Guard.RequiredGuid(
             debtorSession.RegionId,
             nameof(debtorSession.RegionId),
             "debtor session");
@@ -226,42 +222,10 @@ public sealed class AccountReadinessFlow
          */
         if (!string.IsNullOrWhiteSpace(debtorSession.WalletId))
         {
-            ValidateGuid(
+            Guard.RequiredGuid(
                 debtorSession.WalletId,
                 nameof(debtorSession.WalletId),
                 "debtor session");
-        }
-    }
-
-    /// <summary>
-    /// التحقق من أن النص المطلوب غير فارغ.
-    /// </summary>
-    private static void ValidateRequiredValue(
-        string? value,
-        string propertyName,
-        string sessionName)
-    {
-        if (string.IsNullOrWhiteSpace(value))
-        {
-            throw new InvalidOperationException(
-                $"{propertyName} is missing from {sessionName}.");
-        }
-    }
-
-    /// <summary>
-    /// التحقق من أن المعرف النصي Guid صحيح.
-    /// </summary>
-    private static void ValidateGuid(
-        string value,
-        string propertyName,
-        string sessionName)
-    {
-        if (!Guid.TryParse(value, out var parsedValue) ||
-            parsedValue == Guid.Empty)
-        {
-            throw new InvalidOperationException(
-                $"{propertyName} in {sessionName} is not a valid Guid. " +
-                $"Current value: '{value}'.");
         }
     }
 
@@ -314,12 +278,20 @@ public sealed class AccountReadinessFlow
                 log?.Invoke($"[AccountReadiness] Account '{debtorSession.PhoneNumber}' not found. Invoking activation callback...");
                 await onAccountNotFound();
 
-                // إعادة القراءة بعد التفعيل
-                response = await _resilience.ExecuteAsync(
-                    reportSession,
-                    () => _cashFlow.GetCashflowReportAsync(
-                        reportSession.UserKey,
-                        debtorSession.PhoneNumber));
+                // إعادة القراءة بعد التفعيل: الحساب قد يتأخر ظهوره في Cashflow، لذا نعيد المحاولة بدل قراءة واحدة.
+                for (var attempt = 1; attempt <= 6; attempt++)
+                {
+                    response = await _resilience.ExecuteAsync(
+                        reportSession,
+                        () => _cashFlow.GetCashflowReportAsync(
+                            reportSession.UserKey,
+                            debtorSession.PhoneNumber));
+
+                    if (response?.Results is { Count: > 0 })
+                        break;
+
+                    await Task.Delay(500);
+                }
             }
 
             // إذا لم تنجح القراءة بعد التفعيل أو لم يتم تمرير Callback
@@ -428,13 +400,14 @@ public sealed class AccountReadinessFlow
     /// بعض الخدمات لا تحدث Cashflow مباشرة، لذلك نمنح النظام
     /// عدة محاولات قبل اعتبار السداد فاشلًا.
     /// </summary>
-    private async Task<decimal> WaitForDebtSettlementAsync(
+    private async Task<(decimal TotalDue, CashflowReportItem Report)> WaitForDebtSettlementAsync(
      TestSession reportSession,
      TestSession debtorSession,
      AccountReadinessOptions options,
      Action<string>? log)
     {
         decimal lastTotalDue = decimal.MaxValue;
+        CashflowReportItem? lastReport = null;
 
         for (var attempt = 1;
              attempt <= options.DebtVerificationAttempts;
@@ -447,6 +420,7 @@ public sealed class AccountReadinessFlow
                 null,
                 log);
 
+            lastReport = report;
             lastTotalDue = NormalizeDebt(
                 report.TotalDue,
                 options.DebtTolerance);
@@ -457,7 +431,7 @@ public sealed class AccountReadinessFlow
                 $"TotalDue={lastTotalDue}.");
 
             if (lastTotalDue <= options.DebtTolerance)
-                return 0m;
+                return (0m, report);
 
             if (attempt < options.DebtVerificationAttempts)
             {
@@ -466,8 +440,9 @@ public sealed class AccountReadinessFlow
             }
         }
 
-        return lastTotalDue;
+        return (lastTotalDue, lastReport!);
     }
+
     /// <summary>
     /// تحويل القيم الصغيرة جدًا إلى صفر.
     /// </summary>

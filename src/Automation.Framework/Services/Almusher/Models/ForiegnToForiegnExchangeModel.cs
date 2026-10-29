@@ -19,10 +19,10 @@ namespace Automation.Framework.Services.Almusher.Models
         public string DetailedStatement { get; set; } = "string";
 
         // ✅ Return (مطابق للـ JSON)
-        public ForeignToForeignReturnConfig Return { get; set; } = new();
+        public ForeignToForeignReturnConfig? Return { get; set; } = new();
 
         // ✅ Commission (مطابق للـ JSON)
-        public ForeignToForeignCommissionConfig Commission { get; set; } = new();
+        public ForeignToForeignCommissionConfig? Commission { get; set; } = new();
 
         public decimal LydRate { get; set; }
         public bool UsesSellCurrencyAsBase { get; set; }

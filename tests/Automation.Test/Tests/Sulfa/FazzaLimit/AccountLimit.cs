@@ -10,6 +10,8 @@ using Xunit.Abstractions;
 
 namespace Automation.Test.Tests.Sulfa.FazzaLimit
 {
+    [Trait("Category", "Regression")]
+    [Trait("Category", "Slow")]
     public class AccountLimit : BaseSulfaTest
     {
         private const decimal DebtTolerance = 0.0001m;
@@ -1293,7 +1295,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
             var exception =
                 await Record.ExceptionAsync(() =>
                     FazzaTopUp.SetRegionMaxFazaaLimitAsync(
-                        Dashboard.Token,
+                        Dashboard.UserKey,
                         SulfaBusiness.RegionId,
                         newRegionLimit));
 
@@ -1561,7 +1563,7 @@ namespace Automation.Test.Tests.Sulfa.FazzaLimit
             var exception =
                 await Record.ExceptionAsync(() =>
                     FazzaTopUp.SetRegionMaxFazaaLimitAsync(
-                        Dashboard.Token,
+                        Dashboard.UserKey,
                         SulfaBusiness.RegionId,
                         preparation.OriginalLimit));
 

@@ -14,6 +14,8 @@ using Xunit.Abstractions;
 
 namespace Automation.Test.Almusher.USD_TO_EGB
 {
+    [Trait("Category", "Regression")]
+    [Trait("Category", "Slow")]
     public class ForeignToForeignWithReturn : BaseAlmusherTest
     {
         public ForeignToForeignWithReturn(ITestOutputHelper output, AlmuhserFixture fixture)

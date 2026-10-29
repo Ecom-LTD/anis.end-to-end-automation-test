@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using Automation.Framework.Core.Http;
 using Automation.Framework.Shared;
 
@@ -14,12 +14,15 @@ namespace Automation.Framework.Core.Session
         {
             for (var attempt = 0; ; attempt++)
             {
+                var tokenUsed = session.Token;
                 try { return await action(); }
                 catch (ApiException ex)
                     when (ex.ApiStatusCode == HttpStatusCode.Unauthorized && attempt < maxRetries)
                 {
-                    var refreshed = await _cache.RefreshAsync(session.UserKey);
-                    session.CopyFrom(refreshed);
+                    // التوكن المستخدم يمنع إعادة تسجيل الدخول إن حدّثه طلب متزامن آخر.
+                    var refreshed = await _cache.RefreshAsync(session, tokenUsed);
+                    if (!ReferenceEquals(refreshed, session))
+                        session.CopyFrom(refreshed);
                 }
             }
         }

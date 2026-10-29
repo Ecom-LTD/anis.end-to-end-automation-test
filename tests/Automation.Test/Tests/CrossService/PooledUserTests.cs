@@ -10,6 +10,7 @@ using Xunit.Abstractions;
 namespace Automation.Test.Tests.CrossService
 {
     /// <summary>حجز مستخدم متاح من مجموعة Sulfa، بناء جلسته، ثم تحريره تلقائيًا (آمن للتوازي).</summary>
+    [Trait("Category", "Smoke")]
     public class PooledUserTests : BaseSulfaTest
     {
         public PooledUserTests(ITestOutputHelper output, SulfaFixture fixture) : base(output, fixture) { }
@@ -25,8 +26,9 @@ namespace Automation.Test.Tests.CrossService
             var balance = await Resilience.ExecuteAsync(session,
                 () => Flow<WalletFlow>().GetBalanceAsync(session.UserKey, session.WalletIdGuid));
 
+            // الرصيد قد يكون سالبًا (Operator)؛ يكفي أن الجلسة بُنيت وقُرئت المحفظة.
             Output.WriteLine($"💰 الرصيد: {balance}");
-            Assert.True(balance >= 0);
+            Assert.False(string.IsNullOrWhiteSpace(session.WalletId), "Session has no WalletId.");
             PrintResult(nameof(ReserveOperator_BuildSession_ShouldSucceed), true);
         }
 

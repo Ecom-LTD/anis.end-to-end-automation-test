@@ -47,8 +47,8 @@ namespace Automation.Framework.Helpers.Almusher
             var expectedRounded = Math.Round(expected, 3);
             var actualRounded = Math.Round(actual, 3);
 
-            var diff = Math.Abs(expectedRounded - actualRounded);
-            var isEqual = diff < BalanceTolerance;
+            var diff = Math.Abs(expected - actual);   // على القيم الخام: التقريب أولًا كان يفشل مثل 1.0004 مقابل 1.0006
+            var isEqual = diff <= BalanceTolerance;
 
             var message = isEqual
                 ? $"✅ {label}: Expected {expectedRounded:F3}, Actual {actualRounded:F3}"
@@ -80,10 +80,15 @@ namespace Automation.Framework.Helpers.Almusher
 
             return (isEqual, diff, message);
         }
+        /// <summary>مقارنة عامة بحدّ مسموح (شامل).</summary>
+        public static bool AreClose(decimal expected, decimal actual, decimal tolerance = Tolerance)
+            => Math.Abs(expected - actual) <= tolerance;
+
         public static decimal Truncate(decimal value, int digits = 10)
         {
-            var multiplier = (decimal)Math.Pow(10, digits);
-            return Math.Floor(value * multiplier) / multiplier;
+            var multiplier = 1m;
+            for (var i = 0; i < digits; i++) multiplier *= 10m;
+            return Math.Truncate(value * multiplier) / multiplier;
         }
     }
 }

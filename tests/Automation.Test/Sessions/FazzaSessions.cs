@@ -3,8 +3,6 @@ using Automation.Framework.Core.Enums;
 using System;
 using Automation.Framework.Builders;
 using Automation.Framework.Configuration;
-using Automation.Framework.Constants;
-using Automation.Framework.Core.Enums;
 
 namespace Automation.Test.Sessions
 {
@@ -17,7 +15,7 @@ namespace Automation.Test.Sessions
         public static SessionOptions Dashboard => Build(
             userKey: TestUsers.Dashboard,
             type: SubscriptionType.Operator,
-            loadAccount: true,
+            loadAccount: false,   // Dashboard لا يحتاج AccountId
             loadWallet: false);
 
         /// <summary>

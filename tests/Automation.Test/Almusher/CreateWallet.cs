@@ -10,6 +10,7 @@ using Xunit.Abstractions;
 namespace Automation.Test.Tests.Wallet
 {
     [Collection(CollectionNames.Almusher)]
+    [Trait("Category", "Smoke")]
     public class CreateWalletTests : BaseAlmusherTest
     {
         public CreateWalletTests(ITestOutputHelper output, AlmuhserFixture fixture)

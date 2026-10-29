@@ -26,10 +26,12 @@ namespace Automation.Test.Fixtures.Fazza
             Log?.Invoke("FazzaFixture: بدء التهيئة...");
 
             Dashboard = await Sessions.GetOrBuildAsync(FazzaSessions.Dashboard);
-            await Sessions.PrewarmAsync(FazzaSessions.NonDashboard);
-
-            FazzaUser1 = await Sessions.GetOrBuildAsync(FazzaSessions.FazzaUser1);
-            FazzaUser2 = await Sessions.GetOrBuildAsync(FazzaSessions.FazzaUser2);
+            // Dashboard أولًا لأن بناء بقية الجلسات يحتاج توكنه؛ ثم تُبنى الباقية بالتوازي.
+            var users = await Task.WhenAll(
+                Sessions.GetOrBuildAsync(FazzaSessions.FazzaUser1),
+                Sessions.GetOrBuildAsync(FazzaSessions.FazzaUser2));
+            FazzaUser1 = users[0];
+            FazzaUser2 = users[1];
 
             EnsureSessionsAreValid();
 

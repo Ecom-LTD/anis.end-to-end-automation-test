@@ -11,6 +11,8 @@ using Xunit.Abstractions;
 
 namespace Automation.Test.Tests.Almusher
 {
+    [Trait("Category", "Regression")]
+    [Trait("Category", "Slow")]
     public class ExchangeWithProfitAndCommissionExcludedTests : BaseAlmusherTest
     {
         public ExchangeWithProfitAndCommissionExcludedTests(ITestOutputHelper output, AlmuhserFixture fixture)
@@ -392,7 +394,7 @@ namespace Automation.Test.Tests.Almusher
 
             var exchangeId = confirmResponse.Data?.Id;
             Output.WriteLine($"   📋 Exchange ID: {exchangeId ?? "(null)"}");
-            Assert.NotEmpty(exchangeId);
+            Assert.NotEmpty(exchangeId!);
 
             Output.WriteLine($"   ✅ تم تأكيد العملية بنجاح");
 

@@ -13,6 +13,7 @@ using Xunit.Abstractions;
 
 namespace Automation.Test.Tests.Sulfa.SulfaRequest
 {
+    [Trait("Category", "Regression")]
     public class SulfaRequest : BaseSulfaTest
     {
         public SulfaRequest(ITestOutputHelper output, SulfaFixture fixture)

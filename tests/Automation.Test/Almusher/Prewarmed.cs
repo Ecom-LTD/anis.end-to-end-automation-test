@@ -5,6 +5,7 @@ using Xunit.Abstractions;
 
 namespace Automation.Test.Almusher
 {
+    [Trait("Category", "Smoke")]
     public class Prewarmed : BaseAlmusherTest
     {
         public Prewarmed(ITestOutputHelper output, AlmuhserFixture fixture) : base(output, fixture) { }
@@ -189,7 +190,7 @@ namespace Automation.Test.Almusher
 
             if (!string.IsNullOrEmpty(anisPayLydWalletId))
             {
-                var balance = await Wallet.GetBalanceAsync(AnisPay.UserKey, AnisPay.WalletIdGuid);
+                var balance = await Wallet.GetBalanceAsync(AnisPay!.UserKey, AnisPay.WalletIdGuid);
                 Output.WriteLine($"   Anis Pay LYD: {balance:F4}");
             }
 
@@ -207,19 +208,19 @@ namespace Automation.Test.Almusher
 
             if (!string.IsNullOrEmpty(hreyshUsdWalletId))
             {
-                var balance = await Wallet.GetBalanceAsync(Hreysh.UserKey, Hreysh.WalletIdGuid);
+                var balance = await Wallet.GetBalanceAsync(Hreysh!.UserKey, Hreysh.WalletIdGuid);
                 Output.WriteLine($"   Hreysh USD: {balance:F4}");
             }
 
             if (!string.IsNullOrEmpty(profitLydWalletId))
             {
-                var balance = await Wallet.GetBalanceAsync(Profit.UserKey, Profit.WalletIdGuid);
+                var balance = await Wallet.GetBalanceAsync(Profit!.UserKey, Profit.WalletIdGuid);
                 Output.WriteLine($"   Profit LYD: {balance:F4}");
             }
 
             if (!string.IsNullOrEmpty(commissionUsdWalletId))
             {
-                var balance = await Wallet.GetBalanceAsync(Commission.UserKey, Commission.WalletIdGuid);
+                var balance = await Wallet.GetBalanceAsync(Commission!.UserKey, Commission.WalletIdGuid);
                 Output.WriteLine($"   Commission USD: {balance:F4}");
             }
 

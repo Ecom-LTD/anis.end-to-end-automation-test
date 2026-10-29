@@ -6,6 +6,7 @@ using Xunit.Abstractions;
 
 namespace Automation.Test.Tests.Sulfa
 {
+    [Trait("Category", "Smoke")]
     public class OperatorCashbackReport : BaseSulfaTest
     {
         public OperatorCashbackReport(ITestOutputHelper output, SulfaFixture fixture) : base(output, fixture) { }

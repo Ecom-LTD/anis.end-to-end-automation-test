@@ -5,6 +5,7 @@ using Xunit.Abstractions;
 
 namespace Automation.Test.Almusher
 {
+    [Trait("Category", "Regression")]
     public class IniatialChain : BaseAlmusherTest
     {
         public IniatialChain(ITestOutputHelper testOutputHelper, AlmuhserFixture fixture)
@@ -36,7 +37,6 @@ namespace Automation.Test.Almusher
             Output.WriteLine($"   📋 Chain ID: {chainId}");
 
             Assert.NotEqual(Guid.Empty, chainId);
-            Assert.NotNull(chainId);
 
             // ================================================================
             // 3. التحقق من التخزين في StateManager

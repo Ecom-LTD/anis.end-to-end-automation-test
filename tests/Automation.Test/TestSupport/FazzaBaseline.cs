@@ -101,10 +101,16 @@ namespace Automation.Test.Support
                     if (current.FazaaMaxLimit == reg.OriginalLimit)
                         continue;
 
-                    await _fazza.SetRegionMaxFazaaLimitAsync(
+                    var response = await _fazza.SetRegionMaxFazaaLimitAsync(
                         _dashboard.UserKey,
                         reg.RegionId,
                         reg.OriginalLimit);
+
+                    if (response is not { Success: true })
+                    {
+                        log?.Invoke($"⚠️ Region {reg.RegionId} restore rejected: {response?.Message}");
+                        continue;
+                    }
 
                     log?.Invoke($"✅ Restored region {reg.RegionId} limit to {reg.OriginalLimit}.");
                 }
@@ -118,17 +124,9 @@ namespace Automation.Test.Support
         private static async Task<SulfaAccount> GetAccountAsync(
             FazzaTopUpFlow fazza, TestSession dashboard, TestSession account)
         {
-            var accounts = await fazza.GetSulfaAccountsAsync(
-                dashboard.UserKey, account.PhoneNumber);
-
-            var matched = accounts.FirstOrDefault(a =>
-                    AccountMatcher.IdsMatch(a.Id, account.AccountId))
-                ?? accounts.FirstOrDefault(a =>
-                    PhoneNormalizer.AreEqual(a.Phone, account.PhoneNumber))
+            return await fazza.FindAccountAsync(dashboard.UserKey, account.PhoneNumber, account.AccountId)
                 ?? throw new InvalidOperationException(
                     $"Sulfa account not found for {account.PhoneNumber}.");
-
-            return matched;
         }
 
         private static async Task<RegionSulfaFullData> GetRegionAsync(
